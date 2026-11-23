@@ -1,0 +1,2546 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سجلّي | نظام حساب ساعات العمل والحضور والمرتب والمصاريف</title>
+    <!-- تحميل خط Inter والخط العربي المتناسق -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- تحميل Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Cairo', 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+        /* إخفاء شريط التمرير الأفقي في شريط الفلاتر مع إبقاء التمرير فعالاً */
+        #expenseFilterBar::-webkit-scrollbar {
+            display: none;
+        }
+        #expenseFilterBar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* تنسيق موحد ومتوازن لحقول اختيار الشهر/التاريخ */
+        input[type="month"].cycle-date-picker {
+            direction: ltr;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            padding-left: 1.5rem;
+            padding-right: 0.75rem;
+        }
+        /* تأثير إخفاء المبالغ بالبلور */
+        .salary-amount-blurred {
+            filter: blur(10px);
+            user-select: none;
+            transition: filter 0.2s ease;
+        }
+        .salary-amount-clear {
+            filter: none;
+            transition: filter 0.2s ease;
+        }
+        /* دعم الوضع الداكن والخلفيات المخصصة للتبويبات */
+        body.theme-dark {
+            background-color: #0b1120;
+            color: #f1f5f9;
+        }
+        body.theme-dark .bg-white {
+            background-color: #111827 !important;
+            color: #f1f5f9;
+        }
+        body.theme-dark .bg-slate-50 {
+            background-color: #0f172a !important;
+        }
+        body.theme-dark .bg-slate-100 {
+            background-color: #1e293b !important;
+            color: #e2e8f0 !important;
+        }
+        body.theme-dark .text-slate-800 {
+            color: #f8fafc !important;
+        }
+        body.theme-dark .text-slate-700 {
+            color: #e2e8f0 !important;
+        }
+        body.theme-dark .text-slate-600,
+        body.theme-dark .text-slate-500 {
+            color: #94a3b8 !important;
+        }
+        body.theme-dark .border-slate-200,
+        body.theme-dark .border-slate-200\/80,
+        body.theme-dark .border-slate-100 {
+            border-color: #1e293b !important;
+        }
+        body.theme-dark nav > div {
+            background-color: rgba(15, 23, 42, 0.92) !important;
+            border-color: #1e293b !important;
+        }
+        /* خلفية كاملة للصفحة وتأثير شفاف زجاجي لجميع البطاقات والنوافذ عند تعيين خلفية */
+        body.has-custom-bg {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        body.has-custom-bg .bg-white,
+        body.has-custom-bg .bg-white\/95,
+        body.has-custom-bg .bg-white\/65 {
+            background-color: rgba(255, 255, 255, 0.32) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-color: rgba(255, 255, 255, 0.45) !important;
+        }
+        body.has-custom-bg .bg-slate-50,
+        body.has-custom-bg .bg-slate-50\/70,
+        body.has-custom-bg .bg-slate-50\/40,
+        body.has-custom-bg .bg-slate-100 {
+            background-color: rgba(255, 255, 255, 0.25) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        body.has-custom-bg.theme-dark .bg-white,
+        body.has-custom-bg.theme-dark .bg-white\/95,
+        body.has-custom-bg.theme-dark .bg-white\/65 {
+            background-color: rgba(15, 23, 42, 0.42) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-color: rgba(255, 255, 255, 0.16) !important;
+        }
+        body.has-custom-bg.theme-dark .bg-slate-50,
+        body.has-custom-bg.theme-dark .bg-slate-50\/70,
+        body.has-custom-bg.theme-dark .bg-slate-50\/40,
+        body.has-custom-bg.theme-dark .bg-slate-100 {
+            background-color: rgba(15, 23, 42, 0.34) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        body.has-custom-bg nav > div {
+            background-color: rgba(255, 255, 255, 0.35) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-color: rgba(255, 255, 255, 0.45) !important;
+        }
+        body.has-custom-bg.theme-dark nav > div {
+            background-color: rgba(15, 23, 42, 0.45) !important;
+            border-color: rgba(255, 255, 255, 0.16) !important;
+        }
+        body.has-custom-bg section[class*="bg-gradient-to-br"] {
+            opacity: 0.9;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-32 flex flex-col justify-center">
+
+    <!-- ========================================================= -->
+    <!-- الحاوية الرئيسية للتطبيق -->
+    <!-- ========================================================= -->
+    <main class="w-full max-w-5xl mx-auto px-3 sm:px-6 my-auto py-4">
+
+        <!-- ========================================================= -->
+        <!-- التبويب 1: الرئيسية (Home Tab) -->
+        <!-- ========================================================= -->
+        <div id="tab-home" class="tab-view space-y-5">
+            <!-- بطاقة الساعة والحضور والانصراف -->
+            <section class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-3xl border border-blue-500/40 shadow-sm p-5 sm:p-8 text-center">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-white text-xs font-bold mb-3">
+                    <span id="shiftStatusDot" class="w-2.5 h-2.5 rounded-full bg-blue-200"></span>
+                    <span id="shiftStatusText">خارج العمل</span>
+                </div>
+
+                <!-- الساعة الرقمية بنظام 12 ساعة -->
+                <div class="flex items-baseline justify-center gap-2 my-1">
+                    <div id="liveClock" class="text-4xl sm:text-6xl font-extrabold text-white tracking-tight tabular-nums">12:00:00</div>
+                    <span id="livePeriod" class="text-lg sm:text-2xl font-extrabold text-blue-100">ص</span>
+                </div>
+                <p id="liveDate" class="text-xs sm:text-sm font-bold text-blue-100 mt-1"></p>
+
+                <!-- وقت بداية الوردية الحالية إن وجدت -->
+                <div id="activeShiftInfo" class="hidden mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/15 border border-white/25 text-white text-xs sm:text-sm font-bold">
+                    <span>بدأت الوردية الساعة:</span>
+                    <span id="activeShiftStart" class="tabular-nums">--:--</span>
+                    <span class="mx-1 text-blue-200">|</span>
+                    <span>المدة:</span>
+                    <span id="activeShiftElapsed" class="tabular-nums">00:00</span>
+                </div>
+
+                <!-- زرا حضور وانصراف على خط واحد -->
+                <div class="mt-6 grid grid-cols-2 gap-3 sm:gap-4 max-w-md mx-auto">
+                    <button id="btnCheckIn" type="button" onclick="handleCheckIn()" class="py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:scale-[0.99] text-white font-extrabold text-sm sm:text-base shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                        </svg>
+                        <span>حضور</span>
+                    </button>
+
+                    <button id="btnCheckOut" type="button" onclick="handleCheckOut()" disabled class="py-3.5 px-4 rounded-2xl bg-rose-500 hover:bg-rose-600 disabled:bg-white/20 disabled:text-blue-200 disabled:cursor-not-allowed active:scale-[0.99] text-white font-extrabold text-sm sm:text-base transition-all cursor-pointer flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span>انصراف</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- ملخص سريع لليوم -->
+            <section class="grid grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto text-center">
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col items-center justify-center">
+                    <span class="text-xs font-bold text-slate-500 block">ساعات اليوم</span>
+                    <span id="homeTodayHours" class="text-xl sm:text-2xl font-extrabold text-slate-800 mt-1 block tabular-nums">0.00 س</span>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col items-center justify-center">
+                    <span class="text-xs font-bold text-slate-500 block">حالة اليوم</span>
+                    <span id="homeTodayStatus" class="text-sm sm:text-base font-extrabold text-slate-600 mt-2 block">لم يُسجل</span>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col items-center justify-center">
+                    <span class="text-xs font-bold text-slate-500 block">رصيد الاعتيادي (15 يوم)</span>
+                    <span id="homeRegularLeaveRemaining" class="text-xl sm:text-2xl font-extrabold text-amber-600 mt-1 block tabular-nums">15 يوم</span>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col items-center justify-center">
+                    <span class="text-xs font-bold text-slate-500 block">رصيد العارضة (7 أيام)</span>
+                    <span id="homeCasualLeaveRemaining" class="text-xl sm:text-2xl font-extrabold text-sky-600 mt-1 block tabular-nums">7 أيام</span>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- التبويب 2: سجل الحضور (Attendance Tab) -->
+        <!-- ========================================================= -->
+        <div id="tab-attendance" class="tab-view hidden space-y-4">
+            <!-- شريط اختيار الدورة الشهرية (21 إلى 20) -->
+            <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 flex flex-col items-center justify-center text-center gap-3">
+                <div>
+                    <h2 class="text-base sm:text-lg font-extrabold text-slate-800">تقويم الحضور والانصراف</h2>
+                    <p id="cycleRangeLabel" class="text-xs font-bold text-blue-700 mt-0.5">الدورة: --</p>
+                </div>
+                <div class="flex items-center justify-center gap-2 flex-wrap sm:flex-nowrap">
+                    <button type="button" onclick="stepCycleMonth(-1)" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer transition-colors shrink-0">السابق</button>
+                    <button type="button" onclick="jumpToCurrentCycle()" class="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-extrabold text-xs cursor-pointer transition-colors shrink-0">المدة الحالية</button>
+                    <button type="button" onclick="stepCycleMonth(1)" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer transition-colors shrink-0">التالي</button>
+                </div>
+                <div class="flex items-center justify-center w-full">
+                    <input type="month" id="cycleMonthPicker" onchange="onCycleMonthChange()" class="cycle-date-picker w-44 sm:w-52 mx-auto py-2 rounded-2xl border border-blue-200/90 bg-gradient-to-b from-slate-50 to-blue-50/40 text-xs sm:text-sm font-extrabold text-slate-800 shadow-xs hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
+                </div>
+            </section>
+
+            <!-- ملخص ساعات العمل وأيام الحضور للدورة -->
+            <section class="grid grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto text-center">
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 flex flex-col items-center justify-center">
+                    <span class="text-xs font-bold text-slate-500 block">إجمالي ساعات العمل</span>
+                    <span id="attendanceTotalHours" class="text-xl sm:text-2xl font-extrabold text-blue-700 mt-1 block tabular-nums">0 س 0 د</span>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 flex flex-col items-center justify-center">
+                    <span class="text-xs font-bold text-slate-500 block">أيام الحضور</span>
+                    <span id="attendancePresentDays" class="text-xl sm:text-2xl font-extrabold text-emerald-700 mt-1 block tabular-nums">0 يوم</span>
+                </div>
+            </section>
+
+            <!-- دليل الألوان -->
+            <div class="flex flex-wrap items-center justify-center gap-2 text-[11px] font-bold px-1">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800">
+                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span> حضور
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800">
+                    <span class="w-2 h-2 rounded-full bg-rose-600"></span> غياب
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> اعتيادي
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-100 text-sky-800">
+                    <span class="w-2 h-2 rounded-full bg-sky-600"></span> إجازة عارضة
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-100 text-purple-800">
+                    <span class="w-2 h-2 rounded-full bg-purple-600"></span> جمعة / إجازة رسمية
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-100 text-teal-800">
+                    <span class="w-2 h-2 rounded-full bg-teal-600"></span> باور كل
+                </span>
+            </div>
+
+            <!-- شبكة أيام الدورة (21 إلى 20) -->
+            <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-2.5 sm:p-4 overflow-hidden">
+                <!-- صف أيام الأسبوع الثابت (7 أعمدة) -->
+                <div class="grid grid-cols-7 gap-1 sm:gap-2 mb-2 text-center">
+                    <div class="py-1.5 rounded-lg bg-slate-100 text-[10px] sm:text-xs font-extrabold text-slate-600">السبت</div>
+                    <div class="py-1.5 rounded-lg bg-slate-100 text-[10px] sm:text-xs font-extrabold text-slate-600">الأحد</div>
+                    <div class="py-1.5 rounded-lg bg-slate-100 text-[10px] sm:text-xs font-extrabold text-slate-600">الإثنين</div>
+                    <div class="py-1.5 rounded-lg bg-slate-100 text-[10px] sm:text-xs font-extrabold text-slate-600">الثلاثاء</div>
+                    <div class="py-1.5 rounded-lg bg-slate-100 text-[10px] sm:text-xs font-extrabold text-slate-600">الأربعاء</div>
+                    <div class="py-1.5 rounded-lg bg-slate-100 text-[10px] sm:text-xs font-extrabold text-slate-600">الخميس</div>
+                    <div class="py-1.5 rounded-lg bg-purple-100 text-[10px] sm:text-xs font-extrabold text-purple-800">الجمعة</div>
+                </div>
+                <!-- خانات أيام الدورة تحت أيام الأسبوع -->
+                <div id="attendanceGrid" class="grid grid-cols-7 gap-1 sm:gap-2"></div>
+            </section>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- التبويب 3: المرتب (Salary Tab) -->
+        <!-- ========================================================= -->
+        <div id="tab-salary" class="tab-view hidden space-y-4">
+            <!-- شريط اختيار شهر الراتب -->
+            <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 flex flex-col items-center justify-center text-center gap-3">
+                <div>
+                    <h2 class="text-base sm:text-lg font-extrabold text-slate-800">تفاصيل الراتب الشهري</h2>
+                    <p id="salarySelectedCycleRange" class="text-xs font-bold text-emerald-700 mt-0.5">الشهر المحدد: --</p>
+                </div>
+                <div class="flex items-center justify-center gap-2 flex-wrap">
+                    <button type="button" onclick="stepSalaryMonth(-1)" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer transition-colors">السابق</button>
+                    <button type="button" onclick="jumpToCurrentCycle()" class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-extrabold text-xs cursor-pointer transition-colors">المدة الحالية</button>
+                    <button type="button" onclick="stepSalaryMonth(1)" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer transition-colors">التالي</button>
+                </div>
+                <div class="flex items-center justify-center w-full">
+                    <input type="month" id="salaryMonthPicker" onchange="onSalaryMonthChange()" class="cycle-date-picker w-44 sm:w-52 mx-auto py-2 rounded-2xl border border-emerald-200/90 bg-gradient-to-b from-slate-50 to-emerald-50/40 text-xs sm:text-sm font-extrabold text-slate-800 shadow-xs hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer">
+                </div>
+            </section>
+
+            <!-- بطاقة المرتب الأساسية والصافي -->
+            <section class="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-5 sm:p-6 text-white shadow-sm text-center space-y-4">
+                <div class="flex items-center justify-between gap-2">
+                    <span id="salaryNetLabel" class="text-xs font-bold text-emerald-100 transition-opacity duration-200">صافي المرتب المستحق</span>
+                    <button type="button" id="btnToggleSalaryVisibility" onclick="toggleSalaryVisibility()" aria-label="إظهار أو إخفاء المرتب" title="إظهار أو إخفاء المرتب" class="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 transition-colors cursor-pointer mr-auto">
+                        <svg id="eyeOpenIcon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <svg id="eyeClosedIcon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                    </button>
+                </div>
+                <div>
+                    <div id="salaryNetAmount" class="text-3xl sm:text-5xl font-extrabold text-white mt-1 tabular-nums">0 ج.م</div>
+                </div>
+                <div class="bg-white/15 rounded-2xl p-3 border border-white/20 max-w-sm mx-auto">
+                    <span id="salaryBaseLabel" class="text-[11px] text-emerald-100 font-bold block transition-opacity duration-200">الأجر الأساسي من الساعات</span>
+                    <span id="salaryBaseAmount" class="text-base sm:text-lg font-extrabold text-white block mt-0.5 tabular-nums">0 ج.م</span>
+                </div>
+            </section>
+
+            <!-- جدول البنود -->
+            <section class="bg-white/65 backdrop-blur-xl rounded-3xl border border-white/80 shadow-lg shadow-slate-900/5 overflow-hidden">
+                <div class="p-4 bg-white/40 backdrop-blur-md border-b border-white/70 flex flex-col sm:flex-row items-center justify-between text-center sm:text-right gap-2">
+                    <div>
+                        <h3 class="text-sm sm:text-base font-extrabold text-slate-800">جدول البنود (إضافات / خصومات)</h3>
+                        <p class="text-xs text-slate-600 mt-0.5">يتم احتساب البنود تلقائياً ضمن صافي المرتب</p>
+                    </div>
+                    <span id="salaryItemsTotalBadge" class="px-3 py-1 rounded-xl bg-white/75 backdrop-blur-sm border border-white/80 text-slate-800 text-xs font-extrabold tabular-nums">0 ج.م</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-extrabold">
+                                <th class="py-2.5 px-4">البند</th>
+                                <th class="py-2.5 px-4">النوع</th>
+                                <th class="py-2.5 px-4">القيمة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salaryItemsTableBody" class="divide-y divide-slate-200/50 bg-white/35 text-xs sm:text-sm"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- التبويب 4: المصروفات (Expenses Tab) -->
+        <!-- ========================================================= -->
+        <div id="tab-expenses" class="tab-view hidden space-y-4">
+            <!-- شريط التنقل بين الشهور لمراجعة المصروفات -->
+            <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 flex flex-col items-center justify-center text-center gap-3">
+                <div>
+                    <h2 class="text-base sm:text-lg font-extrabold text-slate-800">مراجعة مصروفات الشهور</h2>
+                    <p id="expensesSelectedMonthLabel" class="text-xs font-bold text-rose-700 mt-0.5">الشهر المحدد: --</p>
+                </div>
+                <div class="flex items-center justify-center gap-2 flex-wrap sm:flex-nowrap">
+                    <button type="button" onclick="stepExpenseMonth(-1)" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer transition-colors shrink-0">السابق</button>
+                    <button type="button" onclick="jumpToCurrentExpenseMonth()" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-extrabold text-xs cursor-pointer transition-colors shrink-0">الشهر الحالي</button>
+                    <button type="button" onclick="stepExpenseMonth(1)" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer transition-colors shrink-0">التالي</button>
+                </div>
+                <div class="flex items-center justify-center w-full">
+                    <input type="month" id="expenseMonthPicker" onchange="onExpenseMonthChange()" class="cycle-date-picker w-44 sm:w-52 mx-auto py-2 rounded-2xl border border-rose-200/90 bg-gradient-to-b from-slate-50 to-rose-50/40 text-xs sm:text-sm font-extrabold text-slate-800 shadow-xs hover:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all cursor-pointer">
+                </div>
+            </section>
+
+            <!-- بطاقة المبلغ الرئيسي والمتبقي والمصروفات -->
+            <section class="bg-gradient-to-br from-rose-600 to-pink-700 text-white rounded-3xl p-5 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-right">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-extrabold">سجل المصروفات</h2>
+                        <p id="expensesCycleCaption" class="text-xs text-rose-100 mt-0.5">مصروفات الدورة الحالية</p>
+                    </div>
+                    <button type="button" onclick="openExpenseModal()" class="px-4 py-2.5 bg-white text-rose-700 hover:bg-rose-50 text-xs sm:text-sm font-extrabold rounded-xl shadow-sm transition-colors cursor-pointer shrink-0">
+                        + مصروف جديد
+                    </button>
+                </div>
+
+                <!-- المبلغ الأساسي + المصروفات + المتبقي -->
+                <div class="grid grid-cols-3 gap-2 sm:gap-3 text-center">
+                    <div class="bg-white/15 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
+                        <span class="text-[11px] text-rose-100 font-bold block">المبلغ الرئيسي</span>
+                        <span id="expensesOpeningAmount" class="text-sm sm:text-xl font-extrabold text-white block mt-0.5 tabular-nums">0 ج.م</span>
+                    </div>
+                    <div class="bg-white/15 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
+                        <span class="text-[11px] text-rose-100 font-bold block">المخصوم (يومي + شهري)</span>
+                        <span id="expensesTotalAmount" class="text-sm sm:text-xl font-extrabold text-white block mt-0.5 tabular-nums">0 ج.م</span>
+                    </div>
+                    <div class="bg-white/15 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
+                        <span class="text-[11px] text-rose-100 font-bold block">المتبقي بعد الخصم</span>
+                        <span id="expensesRemainingAmount" class="text-sm sm:text-xl font-extrabold text-emerald-200 block mt-0.5 tabular-nums">0 ج.م</span>
+                    </div>
+                </div>
+
+                <!-- تحديث المبلغ الرئيسي للدورة -->
+                <div class="flex items-center justify-center gap-2 pt-1 max-w-md mx-auto">
+                    <input type="number" step="0.01" min="0" id="inputOpeningBudget" placeholder="أدخل المبلغ الرئيسي (ج.م)" class="flex-1 px-3 py-2 rounded-xl bg-white/95 text-slate-800 text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-white tabular-nums">
+                    <button type="button" id="btnSaveOpeningBudget" onclick="saveOpeningBudget()" class="px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-900 text-white text-xs sm:text-sm font-extrabold transition-colors cursor-pointer shrink-0">
+                        حفظ المبلغ
+                    </button>
+                </div>
+            </section>
+
+            <!-- فلترة حسب النوع الأساسي -->
+            <div class="flex items-center justify-center gap-2 flex-wrap" id="expenseFilterBar">
+                <button type="button" onclick="setExpenseFilter('الكل')" data-filter="الكل" class="exp-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-white cursor-pointer">الكل</button>
+                <button type="button" onclick="setExpenseFilter('daily')" data-filter="daily" class="exp-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 cursor-pointer">مصاريف يومية</button>
+                <button type="button" onclick="setExpenseFilter('monthly')" data-filter="monthly" class="exp-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 cursor-pointer">مصاريف شهرية</button>
+            </div>
+
+            <!-- جداول المصروفات اليومية والشهرية -->
+            <section id="dailyExpensesSection" class="bg-white/65 backdrop-blur-xl rounded-3xl border border-white/80 shadow-lg shadow-amber-900/5 overflow-hidden">
+                <div class="px-4 sm:px-5 py-3.5 bg-gradient-to-l from-amber-500/20 via-amber-50/60 to-white/40 backdrop-blur-md border-b border-white/70 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-2.5 h-7 rounded-full bg-amber-500"></span>
+                        <h3 class="text-sm sm:text-base font-extrabold text-slate-800">جدول المصاريف اليومية</h3>
+                    </div>
+                    <span id="dailyTableCountBadge" class="text-xs font-extrabold text-amber-900 bg-amber-100/80 backdrop-blur-sm border border-amber-200/80 px-3 py-1 rounded-full tabular-nums">0 بند</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900/80 backdrop-blur-md text-white text-[11px] sm:text-xs font-extrabold tracking-wide">
+                                <th class="py-3 px-4 sm:px-5">البند</th>
+                                <th class="py-3 px-4 sm:px-5 text-left">إجمالي القيمة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyExpensesTableBody" class="divide-y divide-slate-200/50 bg-white/35 text-xs sm:text-sm"></tbody>
+                        <tfoot id="dailyExpensesTableFoot" class="bg-amber-100/60 backdrop-blur-md border-t border-white/80 font-extrabold text-slate-900 text-xs sm:text-sm"></tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section id="monthlyExpensesSection" class="bg-white/65 backdrop-blur-xl rounded-3xl border border-white/80 shadow-lg shadow-indigo-900/5 overflow-hidden">
+                <div class="px-4 sm:px-5 py-3.5 bg-gradient-to-l from-indigo-500/20 via-indigo-50/60 to-white/40 backdrop-blur-md border-b border-white/70 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-2.5 h-7 rounded-full bg-indigo-600"></span>
+                        <h3 class="text-sm sm:text-base font-extrabold text-slate-800">جدول المصاريف الشهرية</h3>
+                    </div>
+                    <span id="monthlyTableCountBadge" class="text-xs font-extrabold text-indigo-900 bg-indigo-100/80 backdrop-blur-sm border border-indigo-200/80 px-3 py-1 rounded-full tabular-nums">0 بند</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900/80 backdrop-blur-md text-white text-[11px] sm:text-xs font-extrabold tracking-wide">
+                                <th class="py-3 px-4 sm:px-5">البند</th>
+                                <th class="py-3 px-4 sm:px-5 text-left">إجمالي القيمة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthlyExpensesTableBody" class="divide-y divide-slate-200/50 bg-white/35 text-xs sm:text-sm"></tbody>
+                    <tfoot id="monthlyExpensesTableFoot" class="bg-indigo-100/60 backdrop-blur-md border-t border-white/80 font-extrabold text-slate-900 text-xs sm:text-sm"></tfoot>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- التبويب الجديد: الادخار (Savings Tab) -->
+    <!-- ========================================================= -->
+    <div id="tab-savings" class="tab-view hidden space-y-4">
+        <!-- بطاقة رصيد الادخار الإجمالي -->
+        <section class="bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 text-white rounded-3xl p-5 sm:p-6 shadow-sm text-center space-y-4">
+            <div>
+                <span class="text-xs font-bold text-amber-100 block">إجمالي رصيد الادخار</span>
+                <div id="savingsTotalBalance" class="text-3xl sm:text-5xl font-extrabold text-white mt-1 tabular-nums">0 ج.م</div>
+                <p class="text-xs text-amber-100 mt-1">يتحدث تلقائياً مع فائض أو عجز المصروفات الشهرية</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5 sm:gap-3 max-w-md mx-auto text-center">
+                <div class="bg-white/15 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
+                    <span class="text-[11px] text-amber-100 font-bold block">إجمالي المضاف (فائض)</span>
+                    <span id="savingsTotalDeposits" class="text-sm sm:text-lg font-extrabold text-emerald-200 block mt-0.5 tabular-nums">+0 ج.م</span>
+                </div>
+                <div class="bg-white/15 backdrop-blur-sm rounded-2xl p-3 border border-white/20">
+                    <span class="text-[11px] text-amber-100 font-bold block">إجمالي المسحوب (عجز)</span>
+                    <span id="savingsTotalWithdrawals" class="text-sm sm:text-lg font-extrabold text-rose-200 block mt-0.5 tabular-nums">-0 ج.م</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- زر إضافة بطاقة برتقالية جديدة مستقبلاً -->
+        <div class="flex items-center justify-between gap-2 px-1">
+            <h3 class="text-sm sm:text-base font-extrabold text-slate-800">بطاقات الجمعية والادخار</h3>
+            <button type="button" onclick="addSavingsCard()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs sm:text-sm font-extrabold shadow-sm transition-all cursor-pointer">
+                + إضافة بطاقة جديدة
+            </button>
+        </div>
+
+        <!-- حاوية البطاقات البرتقالية وجداولها المرقمة -->
+        <div id="savingsCardsContainer" class="space-y-4"></div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- التبويب 6: الإعدادات (Settings Tab) -->
+    <!-- ========================================================= -->
+    <div id="tab-reports" class="tab-view hidden space-y-3">
+        <!-- 1. أجر الساعة -->
+        <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <button type="button" onclick="toggleSettingsSection('rate')" class="w-full px-4 py-3.5 flex items-center justify-between text-right cursor-pointer hover:bg-slate-50/70 transition-colors">
+                <span class="text-sm sm:text-base font-extrabold text-slate-800">أجر الساعة</span>
+                <span id="settingsArrow-rate" class="text-xs font-extrabold text-slate-500">▾</span>
+            </button>
+            <div id="settingsBody-rate" class="hidden px-4 pb-4 pt-2 border-t border-slate-100">
+                <div class="flex items-center gap-2">
+                    <input type="number" step="0.01" min="0" id="inputDailyRate" placeholder="أجر الساعة (ج.م)" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums">
+                    <button type="button" onclick="saveSettingsFromButton()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-extrabold cursor-pointer shrink-0">حفظ</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. الإضافات والخصومات -->
+        <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <button type="button" onclick="toggleSettingsSection('adjustments')" class="w-full px-4 py-3.5 flex items-center justify-between text-right cursor-pointer hover:bg-slate-50/70 transition-colors">
+                <span class="text-sm sm:text-base font-extrabold text-slate-800">الإضافات والخصومات</span>
+                <span id="settingsArrow-adjustments" class="text-xs font-extrabold text-slate-500">▾</span>
+            </button>
+            <div id="settingsBody-adjustments" class="hidden px-4 pb-4 pt-2 border-t border-slate-100 space-y-3">
+                <form onsubmit="addAdjustmentItem(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                    <input type="text" id="inputItemTitle" required placeholder="اسم البند" class="sm:col-span-2 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="inputItemType" class="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="allowance">إضافة (+)</option>
+                        <option value="deduction">خصم (-)</option>
+                    </select>
+                    <div class="flex items-center gap-2">
+                        <input type="number" step="0.01" min="0.01" id="inputItemAmount" required placeholder="المبلغ" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums">
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold cursor-pointer shrink-0">إضافة</button>
+                    </div>
+                </form>
+                <div id="settingsItemsList" class="divide-y divide-slate-100 border border-slate-200/70 rounded-2xl overflow-hidden"></div>
+            </div>
+        </section>
+
+        <!-- 3. كلمة سر المرتب -->
+        <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <button type="button" onclick="toggleSettingsSection('pin')" class="w-full px-4 py-3.5 flex items-center justify-between text-right cursor-pointer hover:bg-slate-50/70 transition-colors">
+                <span class="text-sm sm:text-base font-extrabold text-slate-800">كلمة سر المرتب</span>
+                <span id="settingsArrow-pin" class="text-xs font-extrabold text-slate-500">▾</span>
+            </button>
+            <div id="settingsBody-pin" class="hidden px-4 pb-4 pt-2 border-t border-slate-100 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <span id="salaryLockStatusText" class="text-xs font-bold text-slate-500">غير مفعّلة</span>
+                    <button type="button" id="btnRemoveSalaryPin" onclick="removeSalaryPin()" class="hidden px-3 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-extrabold cursor-pointer">إلغاء</button>
+                </div>
+                <form onsubmit="saveSalaryPin(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div id="currentPinFieldGroup" class="hidden">
+                        <input type="password" id="inputCurrentSalaryPin" placeholder="كلمة السر الحالية" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <input type="password" id="inputSalaryPin" required placeholder="كلمة سر جديدة" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-extrabold cursor-pointer">حفظ</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 4. المظهر -->
+        <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <button type="button" onclick="toggleSettingsSection('theme')" class="w-full px-4 py-3.5 flex items-center justify-between text-right cursor-pointer hover:bg-slate-50/70 transition-colors">
+                <span class="text-sm sm:text-base font-extrabold text-slate-800">المظهر</span>
+                <span id="settingsArrow-theme" class="text-xs font-extrabold text-slate-500">▾</span>
+            </button>
+            <div id="settingsBody-theme" class="hidden px-4 pb-4 pt-2 border-t border-slate-100">
+                <div class="grid grid-cols-2 gap-2.5 max-w-sm">
+                    <button type="button" id="themeBtn-light" onclick="setThemeMode('light')" class="py-2.5 px-3 rounded-xl border-2 border-blue-600 bg-blue-50 text-blue-700 text-xs sm:text-sm font-extrabold transition-all cursor-pointer">الوضع النهاري</button>
+                    <button type="button" id="themeBtn-dark" onclick="setThemeMode('dark')" class="py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold transition-all cursor-pointer">الوضع الليلي</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. خلفيات التبويبات -->
+        <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <button type="button" onclick="toggleSettingsSection('backgrounds')" class="w-full px-4 py-3.5 flex items-center justify-between text-right cursor-pointer hover:bg-slate-50/70 transition-colors">
+                <span class="text-sm sm:text-base font-extrabold text-slate-800">خلفيات التبويبات</span>
+                <span id="settingsArrow-backgrounds" class="text-xs font-extrabold text-slate-500">▾</span>
+            </button>
+            <div id="settingsBody-backgrounds" class="hidden px-4 pb-4 pt-2 border-t border-slate-100">
+                <div id="tabBackgroundsList" class="space-y-2"></div>
+            </div>
+        </section>
+
+        <!-- 6. الموقع الجغرافي -->
+        <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <button type="button" onclick="toggleSettingsSection('geo')" class="w-full px-4 py-3.5 flex items-center justify-between text-right cursor-pointer hover:bg-slate-50/70 transition-colors">
+                <span class="text-sm sm:text-base font-extrabold text-slate-800">الموقع الجغرافي</span>
+                <span id="settingsArrow-geo" class="text-xs font-extrabold text-slate-500">▾</span>
+            </button>
+            <div id="settingsBody-geo" class="hidden px-4 pb-4 pt-2 border-t border-slate-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <p id="geoPermissionStatusText" class="text-xs font-bold text-slate-500">جاري الفحص...</p>
+                    <button type="button" onclick="requestGeoPermissionExplicitly()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold cursor-pointer shrink-0">طلب إذن الموقع</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- شريط التنقل السفلي الثابت (Bottom Navigation Bar - 6 تبويبات) -->
+    <!-- ========================================================= -->
+    <nav class="fixed bottom-9 sm:bottom-6 inset-x-0 z-40 px-2 sm:px-3 pointer-events-none pb-safe">
+        <div class="max-w-xl mx-auto bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-lg grid grid-cols-6 h-16 pointer-events-auto">
+            <button type="button" onclick="switchTab('home')" id="nav-btn-home" class="nav-btn flex flex-col items-center justify-center gap-1 text-blue-600 font-bold transition-colors relative cursor-pointer w-full h-full">
+                <span id="nav-indicator-home" class="absolute top-0 w-7 h-1 bg-blue-600 rounded-b-full transition-all"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span class="text-[10px] sm:text-xs text-center truncate w-full px-0.5">الرئيسية</span>
+            </button>
+
+            <button type="button" onclick="switchTab('attendance')" id="nav-btn-attendance" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-800 font-medium transition-colors relative cursor-pointer w-full h-full">
+                <span id="nav-indicator-attendance" class="hidden absolute top-0 w-7 h-1 bg-blue-600 rounded-b-full transition-all"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-[10px] sm:text-xs text-center truncate w-full px-0.5">سجل الحضور</span>
+            </button>
+
+            <button type="button" onclick="switchTab('salary')" id="nav-btn-salary" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-800 font-medium transition-colors relative cursor-pointer w-full h-full">
+                <span id="nav-indicator-salary" class="hidden absolute top-0 w-7 h-1 bg-emerald-600 rounded-b-full transition-all"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-[10px] sm:text-xs text-center truncate w-full px-0.5">المرتب</span>
+            </button>
+
+            <button type="button" onclick="switchTab('expenses')" id="nav-btn-expenses" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-800 font-medium transition-colors relative cursor-pointer w-full h-full">
+                <span id="nav-indicator-expenses" class="hidden absolute top-0 w-7 h-1 bg-rose-600 rounded-b-full transition-all"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span class="text-[10px] sm:text-xs text-center truncate w-full px-0.5">المصروفات</span>
+            </button>
+
+            <button type="button" onclick="switchTab('savings')" id="nav-btn-savings" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-800 font-medium transition-colors relative cursor-pointer w-full h-full">
+                <span id="nav-indicator-savings" class="hidden absolute top-0 w-7 h-1 bg-amber-600 rounded-b-full transition-all"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-13l-.87.5M4.21 16.5l-.87.5M20.66 16.5l-.87-.5M4.21 7.5l-.87-.5M17 12a5 5 0 11-10 0 5 5 0 0110 0z" />
+                </svg>
+                <span class="text-[10px] sm:text-xs text-center truncate w-full px-0.5">الادخار</span>
+            </button>
+
+            <button type="button" onclick="switchTab('reports')" id="nav-btn-reports" class="nav-btn flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-800 font-medium transition-colors relative cursor-pointer w-full h-full">
+                <span id="nav-indicator-reports" class="hidden absolute top-0 w-7 h-1 bg-blue-600 rounded-b-full transition-all"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="text-[10px] sm:text-xs text-center truncate w-full px-0.5">الإعدادات</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ========================================================= -->
+    <!-- نافذة تعديل يوم الحضور (Attendance Day Modal) -->
+    <!-- ========================================================= -->
+    <div id="dayModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="text-sm sm:text-base font-extrabold text-slate-800">تعديل سجل اليوم</h3>
+                    <p id="dayModalDateLabel" class="text-[11px] font-bold text-slate-500 mt-0.5">--</p>
+                </div>
+                <button type="button" onclick="closeDayModal()" class="px-2.5 py-1 rounded-xl text-xs font-extrabold text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer">إغلاق</button>
+            </div>
+
+            <form onsubmit="saveDayRecord(event)" class="space-y-3.5">
+                <input type="hidden" id="editDayISO">
+
+                <div>
+                    <label for="editDayStatus" class="block text-xs font-bold text-slate-600 mb-1">حالة اليوم</label>
+                    <select id="editDayStatus" onchange="toggleDayTimeInputs()" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="present">حضور</option>
+                        <option value="powerall">باور كل</option>
+                        <option value="absent">غياب</option>
+                        <option value="regular">اعتيادي</option>
+                        <option value="casual">إجازة عارضة</option>
+                        <option value="holiday">جمعة / إجازة رسمية</option>
+                    </select>
+                </div>
+
+                <div id="dayTimeInputsGroup" class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label for="editDayCheckIn" class="block text-xs font-bold text-slate-600 mb-1">وقت الحضور</label>
+                        <input type="time" id="editDayCheckIn" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="editDayCheckOut" class="block text-xs font-bold text-slate-600 mb-1">وقت الانصراف</label>
+                        <input type="time" id="editDayCheckOut" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="editDayNote" class="block text-xs font-bold text-slate-600 mb-1">ملاحظات</label>
+                    <input type="text" id="editDayNote" placeholder="اختياري..." class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="flex items-center justify-between gap-2 pt-2">
+                    <button type="button" onclick="deleteDayRecord()" class="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-extrabold cursor-pointer">
+                        مسح اليوم
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-extrabold cursor-pointer">
+                        حفظ التعديلات
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- نافذة تفاصيل اليوم المنبثقة (Day Details Modal) -->
+    <!-- ========================================================= -->
+    <div id="dayDetailsModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="text-sm sm:text-base font-extrabold text-slate-800">تفاصيل اليوم</h3>
+                    <p id="dayDetailsDateLabel" class="text-[11px] font-bold text-slate-500 mt-0.5">--</p>
+                </div>
+                <button type="button" onclick="closeDayDetailsModal()" class="px-2.5 py-1 rounded-xl text-xs font-extrabold text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer">إغلاق</button>
+            </div>
+
+            <div id="dayDetailsBody" class="space-y-2.5 text-xs sm:text-sm"></div>
+
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeDayDetailsModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold cursor-pointer">
+                    إغلاق
+                </button>
+                <button type="button" id="btnOpenEditFromDetails" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-extrabold cursor-pointer">
+                    تعديل اليوم
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- نافذة تسجيل مصروف جديد (Expense Modal) -->
+    <!-- ========================================================= -->
+    <div id="expenseModal" class="hidden fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 id="expenseModalTitle" class="text-sm sm:text-base font-extrabold text-slate-800">تسجيل مصروف جديد</h3>
+                <button type="button" onclick="closeExpenseModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer">✕</button>
+            </div>
+
+            <div class="space-y-3.5">
+                <input type="hidden" id="expenseId">
+                <input type="hidden" id="inputExpenseKind" value="daily">
+
+                <div>
+                    <span class="block text-xs font-bold text-slate-600 mb-1.5">نوع المصروف</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" data-kind="daily" onclick="selectExpenseKind('daily')" class="kind-choice-btn p-2.5 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-700 font-extrabold text-xs sm:text-sm transition-all cursor-pointer">
+                            مصاريف يومية
+                        </button>
+                        <button type="button" data-kind="monthly" onclick="selectExpenseKind('monthly')" class="kind-choice-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm hover:bg-slate-100 transition-all cursor-pointer">
+                            مصاريف شهرية
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="block text-xs font-bold text-slate-600 mb-1.5">البند</span>
+                    <button type="button" onclick="openExpenseItemPopover()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50/50 flex items-center justify-between text-right transition-colors cursor-pointer">
+                        <span id="selectedExpenseItemBadge" class="text-xs sm:text-sm font-extrabold text-slate-800">مواصلات</span>
+                        <span class="text-xs font-extrabold text-rose-600">تغيير / إضافة ▾</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label for="inputExpenseAmount" class="block text-xs font-bold text-slate-600 mb-1">القيمة (ج.م)</label>
+                        <input type="number" step="0.01" min="0.01" id="inputExpenseAmount" placeholder="0.00" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500 tabular-nums">
+                    </div>
+                    <div>
+                        <label for="inputExpenseDate" class="block text-xs font-bold text-slate-600 mb-1">التاريخ</label>
+                        <input type="date" id="inputExpenseDate" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="inputExpenseNote" class="block text-xs font-bold text-slate-600 mb-1">ملاحظة (اختياري)</label>
+                    <input type="text" id="inputExpenseNote" placeholder="تفاصيل إضافية..." class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeExpenseModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold cursor-pointer">
+                        إلغاء
+                    </button>
+                    <button type="button" onclick="saveExpense()" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-extrabold cursor-pointer">
+                        حفظ المصروف
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- قائمة منبثقة لاختيار أو إضافة بند المصروف (Expense Item Popover) -->
+    <!-- ========================================================= -->
+    <div id="expenseItemPopoverModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-xl border border-slate-200 space-y-3.5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div>
+                    <h3 class="text-sm sm:text-base font-extrabold text-slate-800">اختر أو أضف بنداً</h3>
+                    <span id="popoverKindSubtitle" class="text-[11px] font-bold text-slate-500 mt-0.5">اضغط على أي بند لاختياره فوراً</span>
+                </div>
+                <button type="button" onclick="closeExpenseItemPopover()" class="px-2.5 py-1 rounded-xl text-xs font-extrabold text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer">إغلاق</button>
+            </div>
+
+            <!-- التبديل المباشر بين بنود اليومية والشهرية داخل القائمة المنبثقة -->
+            <div class="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-100 border border-slate-200/80">
+                <button type="button" id="popoverTab-daily" onclick="switchPopoverKind('daily')" class="py-2 px-3 rounded-xl text-xs font-extrabold bg-rose-600 text-white shadow-xs transition-all cursor-pointer">
+                    بنود اليومية
+                </button>
+                <button type="button" id="popoverTab-monthly" onclick="switchPopoverKind('monthly')" class="py-2 px-3 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-800 transition-all cursor-pointer">
+                    بنود الشهرية
+                </button>
+            </div>
+
+            <!-- قائمة البنود بشكل صفوف واضحة وسهلة الضغط -->
+            <div id="expenseItemOptionsList" class="max-h-56 overflow-y-auto flex flex-col gap-1.5 py-1"></div>
+
+            <!-- إضافة بند جديد مباشرة -->
+            <div class="pt-3 border-t border-slate-100">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="inputNewExpenseItem" placeholder="+ اسم بند جديد..." class="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                    <button type="button" onclick="confirmAddNewExpenseItem()" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-extrabold cursor-pointer shrink-0">
+                        حفظ البند
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- نافذة تأكيد مخصصة بديلة لـ confirm() -->
+    <!-- ========================================================= -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-xl border border-slate-200 space-y-4 text-center">
+            <h3 id="confirmTitle" class="text-base font-extrabold text-slate-800">تأكيد الإجراء</h3>
+            <p id="confirmMessage" class="text-xs sm:text-sm text-slate-600 leading-relaxed">هل أنت متأكد من المتابعة؟</p>
+            <div class="flex items-center justify-center gap-2.5 pt-1">
+                <button type="button" onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold cursor-pointer">
+                    إلغاء
+                </button>
+                <button type="button" id="confirmActionBtn" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold cursor-pointer">
+                    تأكيد
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- نافذة إدخال كلمة السر لعرض المرتب (Salary Unlock Modal) -->
+    <!-- ========================================================= -->
+    <div id="salaryPinModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-xl border border-slate-200 space-y-4 text-center">
+            <div>
+                <h3 class="text-base font-extrabold text-slate-800">المرتب محمي بكلمة سر</h3>
+                <p class="text-xs text-slate-500 mt-1">أدخل كلمة السر لعرض تفاصيل المرتب</p>
+            </div>
+
+            <form onsubmit="verifySalaryPin(event)" class="space-y-3">
+                <input type="password" inputmode="numeric" id="unlockSalaryPinInput" required placeholder="كلمة السر..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-center text-sm font-extrabold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <p id="salaryPinErrorText" class="hidden text-xs font-extrabold text-rose-600">كلمة السر غير صحيحة</p>
+                <div class="flex items-center justify-center gap-2 pt-1">
+                    <button type="button" onclick="closeSalaryPinModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold cursor-pointer">
+                        إلغاء
+                    </button>
+                    <button type="submit" id="salaryPinSubmitBtn" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold cursor-pointer">
+                        تم
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- إشعار منبثق (Toast) -->
+    <!-- ========================================================= -->
+    <div id="toast" class="fixed bottom-28 sm:bottom-24 inset-x-0 z-50 flex justify-center pointer-events-none px-4 transition-all duration-300 translate-y-20 opacity-0">
+        <div class="bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2 text-xs sm:text-sm font-extrabold">
+            <span id="toastIcon" class="text-emerald-400 font-extrabold">✔</span>
+            <span id="toastMessage">تم الحفظ</span>
+        </div>
+    </div>
+
+    <script>
+        // مفاتيح التخزين المحلي
+        const STORAGE_KEYS = {
+            RECORDS: 'sijilli_attendance_records_v1',
+            EXPENSES: 'sijilli_expenses_v1',
+            ACTIVE_SESSION: 'sijilli_active_session_v1',
+            SETTINGS: 'sijilli_settings_v1'
+        };
+
+        // حالة التطبيق
+        let records = [];
+        let expenses = [];
+        let activeSession = null;
+        let dailyRate = 0;
+        let adjustmentItems = [];
+        let openingBudgets = {};
+        let savedDailyExpenseItems = ['مواصلات'];
+        let savedMonthlyExpenseItems = [];
+        let activeExpenseFilter = 'الكل';
+        let pendingConfirmAction = null;
+        let selectedExpenseItemValue = 'مواصلات';
+        let selectedCycleKey = '';
+        let selectedExpenseMonthKey = '';
+        let savingsBalance = 0;
+        let savingsTransactions = [];
+        let savingsCards = [];
+        let salaryPin = '';
+        let isSalaryUnlocked = false;
+        let isSalaryBlurred = false;
+        let pinModalMode = 'unlock';
+        let toastTimer = null;
+        let themeMode = 'light';
+        let currentActiveTab = 'home';
+        let tabBackgrounds = {
+            home: '',
+            attendance: '',
+            salary: '',
+            expenses: '',
+            savings: '',
+            reports: ''
+        };
+
+        const TAB_LABELS = {
+            home: 'الرئيسية',
+            attendance: 'سجل الحضور',
+            salary: 'المرتب',
+            expenses: 'المصروفات',
+            savings: 'الادخار',
+            reports: 'الإعدادات'
+        };
+
+        const STATUS_META = {
+            present: { label: 'حضور', bg: 'bg-emerald-100/90 border-emerald-400 text-emerald-950', badge: 'bg-emerald-600 text-white' },
+            powerall: { label: 'باور كل', bg: 'bg-teal-100/90 border-teal-400 text-teal-950', badge: 'bg-teal-600 text-white' },
+            absent: { label: 'غياب', bg: 'bg-rose-100/90 border-rose-400 text-rose-950', badge: 'bg-rose-600 text-white' },
+            regular: { label: 'اعتيادي', bg: 'bg-amber-100/90 border-amber-400 text-amber-950', badge: 'bg-amber-500 text-white' },
+            casual: { label: 'إجازة عارضة', bg: 'bg-sky-100/90 border-sky-400 text-sky-950', badge: 'bg-sky-600 text-white' },
+            holiday: { label: 'جمعة / رسمية', bg: 'bg-purple-100/90 border-purple-400 text-purple-950', badge: 'bg-purple-600 text-white' }
+        };
+
+        function showToast(message, isError = false) {
+            try {
+                const toast = document.getElementById('toast');
+                const msgEl = document.getElementById('toastMessage');
+                const iconEl = document.getElementById('toastIcon');
+                if (!toast || !msgEl) return;
+                msgEl.textContent = message;
+                if (iconEl) {
+                    iconEl.textContent = isError ? '!' : '✔';
+                    iconEl.className = isError ? 'text-rose-400 font-extrabold' : 'text-emerald-400 font-extrabold';
+                }
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+                if (toastTimer) clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toast.classList.remove('translate-y-0', 'opacity-100');
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 2600);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function openConfirmModal(title, message, onConfirm) {
+            pendingConfirmAction = typeof onConfirm === 'function' ? onConfirm : null;
+            const titleEl = document.getElementById('confirmTitle');
+            const msgEl = document.getElementById('confirmMessage');
+            const btnEl = document.getElementById('confirmActionBtn');
+            if (titleEl) titleEl.textContent = title || 'تأكيد الإجراء';
+            if (msgEl) msgEl.textContent = message || 'هل أنت متأكد؟';
+            if (btnEl) {
+                btnEl.onclick = () => {
+                    const action = pendingConfirmAction;
+                    closeConfirmModal();
+                    if (action) action();
+                };
+            }
+            document.getElementById('confirmModal')?.classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            pendingConfirmAction = null;
+            document.getElementById('confirmModal')?.classList.add('hidden');
+        }
+
+        function toLocalISO(dateObj) {
+            const d = new Date(dateObj);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function formatTime12Arabic(dateObj) {
+            const d = new Date(dateObj);
+            let h = d.getHours();
+            const m = String(d.getMinutes()).padStart(2, '0');
+            const s = String(d.getSeconds()).padStart(2, '0');
+            const period = h >= 12 ? 'م' : 'ص';
+            h = h % 12;
+            if (h === 0) h = 12;
+            return {
+                hm: `${String(h).padStart(2, '0')}:${m}`,
+                hms: `${String(h).padStart(2, '0')}:${m}:${s}`,
+                period
+            };
+        }
+
+        // حساب الدقائق بدقة (يشمل أجزاء الدقيقة عند الانصراف والورديات الجارية)
+        function calculateElapsedMinutes(startMs, endMs = Date.now()) {
+            const diffMs = Math.max(0, Number(endMs) - Number(startMs));
+            if (diffMs === 0) return 0;
+            return Math.max(1, Math.round(diffMs / 60000));
+        }
+
+        function formatMinutesToHHMM(totalMins) {
+            const safe = Math.max(0, Math.round(Number(totalMins) || 0));
+            const h = Math.floor(safe / 60);
+            const m = safe % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+
+        function formatDurationHoursMinutes(totalMins, compact = false) {
+            const safe = Math.max(0, Math.round(Number(totalMins) || 0));
+            const h = Math.floor(safe / 60);
+            const m = safe % 60;
+            if (compact) {
+                if (h === 0 && m === 0) return '0 د';
+                if (m === 0) return `${h} س`;
+                if (h === 0) return `${m} د`;
+                return `${h}س ${m}د`;
+            }
+            return `${h} س ${m} د`;
+        }
+
+        function formatCurrencyEGP(val) {
+            const num = Number(val) || 0;
+            return `${num.toLocaleString('ar-EG', { minimumFractionDigits: num % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 })} ج.م`;
+        }
+
+        function parseTimeToMinutesOnDate(isoDate, hhmm) {
+            if (!isoDate || !hhmm || !hhmm.includes(':')) return null;
+            const [y, m, d] = isoDate.split('-').map(Number);
+            const [hh, mm] = hhmm.split(':').map(Number);
+            if ([y, m, d, hh, mm].some(n => Number.isNaN(n))) return null;
+            return new Date(y, m - 1, d, hh, mm, 0, 0).getTime();
+        }
+
+        function getRecordMinutes(rec) {
+            if (!rec) return 0;
+            if (typeof rec.minutes === 'number' && rec.minutes >= 0) return rec.minutes;
+            if (rec.checkIn && rec.checkOut) {
+                const startMs = parseTimeToMinutesOnDate(rec.date, rec.checkIn);
+                let endMs = parseTimeToMinutesOnDate(rec.date, rec.checkOut);
+                if (startMs !== null && endMs !== null) {
+                    if (endMs < startMs) endMs += 24 * 60 * 60 * 1000;
+                    return Math.max(0, Math.round((endMs - startMs) / 60000));
+                }
+            }
+            return 0;
+        }
+
+        function getCurrentCycleKey(dateObj = new Date()) {
+            const d = new Date(dateObj);
+            const year = d.getFullYear();
+            const month = d.getMonth();
+            const day = d.getDate();
+            let targetYear = year;
+            let targetMonth = month;
+            if (day >= 21) {
+                targetMonth += 1;
+                if (targetMonth > 11) {
+                    targetMonth = 0;
+                    targetYear += 1;
+                }
+            }
+            return `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
+        }
+
+        function getCycleDateRange(cycleKey) {
+            const parts = (cycleKey || getCurrentCycleKey()).split('-').map(Number);
+            const year = parts[0] || new Date().getFullYear();
+            const monthIndex = (parts[1] || (new Date().getMonth() + 1)) - 1;
+            const startDate = new Date(year, monthIndex - 1, 21, 0, 0, 0, 0);
+            const endDate = new Date(year, monthIndex, 20, 23, 59, 59, 999);
+            return { startDate, endDate };
+        }
+
+        function stepCycleKey(key, deltaMonths) {
+            const parts = (key || getCurrentCycleKey()).split('-').map(Number);
+            const d = new Date(parts[0], (parts[1] || 1) - 1 + deltaMonths, 1);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function getCurrentMonthKey(dateObj = new Date()) {
+            const d = new Date(dateObj);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function getMonthDateRange(monthKey) {
+            const parts = (monthKey || getCurrentMonthKey()).split('-').map(Number);
+            const year = parts[0] || new Date().getFullYear();
+            const monthIndex = (parts[1] || (new Date().getMonth() + 1)) - 1;
+            const startDate = new Date(year, monthIndex, 1, 0, 0, 0, 0);
+            const endDate = new Date(year, monthIndex + 1, 0, 23, 59, 59, 999);
+            return { startDate, endDate };
+        }
+
+        function loadAllData() {
+            try {
+                const rawRecords = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECORDS) || '[]');
+                records = Array.isArray(rawRecords) ? rawRecords : [];
+            } catch (e) {
+                records = [];
+            }
+            try {
+                const rawExpenses = JSON.parse(localStorage.getItem(STORAGE_KEYS.EXPENSES) || '[]');
+                expenses = Array.isArray(rawExpenses) ? rawExpenses : [];
+            } catch (e) {
+                expenses = [];
+            }
+            try {
+                const rawSession = JSON.parse(localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION) || 'null');
+                activeSession = rawSession && rawSession.startTime ? rawSession : null;
+            } catch (e) {
+                activeSession = null;
+            }
+            try {
+                const rawSettings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+                dailyRate = Number(rawSettings.dailyRate) >= 0 ? Number(rawSettings.dailyRate) : 0;
+                adjustmentItems = Array.isArray(rawSettings.adjustmentItems) ? rawSettings.adjustmentItems : [];
+                openingBudgets = rawSettings.openingBudgets && typeof rawSettings.openingBudgets === 'object' ? rawSettings.openingBudgets : {};
+                savingsBalance = Number(rawSettings.savingsBalance) || 0;
+                savingsTransactions = Array.isArray(rawSettings.savingsTransactions) ? rawSettings.savingsTransactions : [];
+                if (Array.isArray(rawSettings.savingsCards) && rawSettings.savingsCards.length) {
+                    savingsCards = rawSettings.savingsCards;
+                } else {
+                    savingsCards = [createDefaultSavingsCard('جمعية', 20)];
+                }
+                savedDailyExpenseItems = Array.isArray(rawSettings.savedDailyExpenseItems) && rawSettings.savedDailyExpenseItems.length
+                    ? rawSettings.savedDailyExpenseItems
+                    : ['مواصلات'];
+                savedMonthlyExpenseItems = Array.isArray(rawSettings.savedMonthlyExpenseItems)
+                    ? rawSettings.savedMonthlyExpenseItems
+                    : [];
+                salaryPin = typeof rawSettings.salaryPin === 'string' ? rawSettings.salaryPin : '';
+                themeMode = rawSettings.themeMode === 'dark' ? 'dark' : 'light';
+                if (rawSettings.tabBackgrounds && typeof rawSettings.tabBackgrounds === 'object') {
+                    tabBackgrounds = { ...tabBackgrounds, ...rawSettings.tabBackgrounds };
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            if (!selectedCycleKey) selectedCycleKey = getCurrentCycleKey();
+            if (!selectedExpenseMonthKey) selectedExpenseMonthKey = getCurrentMonthKey();
+            if (!selectedExpenseItemValue) {
+                selectedExpenseItemValue = savedDailyExpenseItems[0] || 'مواصلات';
+            }
+        }
+
+        function saveSettingsToStorage() {
+            try {
+                const payload = {
+                    dailyRate,
+                    adjustmentItems,
+                    openingBudgets,
+                    savingsBalance,
+                    savingsTransactions,
+                    savingsCards,
+                    savedDailyExpenseItems,
+                    savedMonthlyExpenseItems,
+                    salaryPin,
+                    themeMode,
+                    tabBackgrounds
+                };
+                localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(payload));
+            } catch (e) {
+                showToast('تعذر حفظ الإعدادات', true);
+            }
+        }
+
+        function saveRecordsToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.RECORDS, JSON.stringify(records));
+            } catch (e) {
+                showToast('تعذر حفظ سجل الحضور', true);
+            }
+        }
+
+        function saveExpensesToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
+            } catch (e) {
+                showToast('تعذر حفظ المصروفات', true);
+            }
+        }
+
+        function applyThemeAndBackground() {
+            document.body.classList.toggle('theme-dark', themeMode === 'dark');
+            const bgUrl = tabBackgrounds[currentActiveTab] || '';
+            if (bgUrl) {
+                document.body.style.backgroundImage = `url("${bgUrl}")`;
+                document.body.classList.add('has-custom-bg');
+            } else {
+                document.body.style.backgroundImage = '';
+                document.body.classList.remove('has-custom-bg');
+            }
+            const lightBtn = document.getElementById('themeBtn-light');
+            const darkBtn = document.getElementById('themeBtn-dark');
+            if (lightBtn && darkBtn) {
+                if (themeMode === 'dark') {
+                    darkBtn.className = 'py-2.5 px-3 rounded-xl border-2 border-blue-600 bg-blue-50 text-blue-700 text-xs sm:text-sm font-extrabold transition-all cursor-pointer';
+                    lightBtn.className = 'py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold transition-all cursor-pointer';
+                } else {
+                    lightBtn.className = 'py-2.5 px-3 rounded-xl border-2 border-blue-600 bg-blue-50 text-blue-700 text-xs sm:text-sm font-extrabold transition-all cursor-pointer';
+                    darkBtn.className = 'py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold transition-all cursor-pointer';
+                }
+            }
+        }
+
+        function switchTab(tabName) {
+            const validTabs = ['home', 'attendance', 'salary', 'expenses', 'savings', 'reports'];
+            if (!validTabs.includes(tabName)) tabName = 'home';
+            currentActiveTab = tabName;
+
+            validTabs.forEach(t => {
+                const view = document.getElementById(`tab-${t}`);
+                const btn = document.getElementById(`nav-btn-${t}`);
+                const ind = document.getElementById(`nav-indicator-${t}`);
+                if (view) view.classList.toggle('hidden', t !== tabName);
+                if (btn) {
+                    if (t === tabName) {
+                        btn.classList.remove('text-slate-500', 'font-medium');
+                        btn.classList.add('text-blue-600', 'font-bold');
+                    } else {
+                        btn.classList.remove('text-blue-600', 'font-bold');
+                        btn.classList.add('text-slate-500', 'font-medium');
+                    }
+                }
+                if (ind) ind.classList.toggle('hidden', t !== tabName);
+            });
+
+            applyThemeAndBackground();
+
+            if (tabName === 'home') renderHomeTab();
+            if (tabName === 'attendance') renderAttendanceTab();
+            if (tabName === 'salary') renderSalaryTab();
+            if (tabName === 'expenses') renderExpensesTab();
+            if (tabName === 'savings') renderSavingsTab();
+            if (tabName === 'reports') renderSettingsTab();
+        }
+
+        function createDefaultSavingsCard(title = 'جمعية', count = 20) {
+            const safeCount = Math.max(1, Math.min(200, Number(count) || 20));
+            const rows = [];
+            for (let i = 1; i <= safeCount; i++) {
+                rows.push({ seq: i, note: '', amount: '' });
+            }
+            return {
+                id: `card_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                title: title || 'جمعية',
+                count: safeCount,
+                rows
+            };
+        }
+
+        function addSavingsCard() {
+            const newCard = createDefaultSavingsCard(`جمعية ${savingsCards.length + 1}`, 20);
+            savingsCards.push(newCard);
+            saveSettingsToStorage();
+            renderSavingsTab();
+            showToast('تمت إضافة بطاقة جديدة');
+        }
+
+        function updateSavingsCardTitle(cardId, newTitle) {
+            const card = savingsCards.find(c => c.id === cardId);
+            if (!card) return;
+            card.title = (newTitle || '').trim() || 'جمعية';
+            saveSettingsToStorage();
+        }
+
+        function updateSavingsCardCount(cardId, newCountRaw) {
+            const card = savingsCards.find(c => c.id === cardId);
+            if (!card) return;
+            const parsed = parseInt(newCountRaw, 10);
+            const safeCount = Number.isNaN(parsed) ? 1 : Math.max(1, Math.min(200, parsed));
+            const existingRows = Array.isArray(card.rows) ? card.rows : [];
+            const nextRows = [];
+            for (let i = 1; i <= safeCount; i++) {
+                const prev = existingRows[i - 1];
+                nextRows.push({
+                    seq: i,
+                    note: prev ? prev.note || '' : '',
+                    amount: prev ? prev.amount ?? '' : ''
+                });
+            }
+            card.count = safeCount;
+            card.rows = nextRows;
+            saveSettingsToStorage();
+            renderSavingsTab();
+            showToast(`تم تحديث عدد الأرقام إلى ${safeCount}`);
+        }
+
+        function updateSavingsRowField(cardId, rowIndex, field, value) {
+            const card = savingsCards.find(c => c.id === cardId);
+            if (!card || !Array.isArray(card.rows) || !card.rows[rowIndex]) return;
+            card.rows[rowIndex][field] = value;
+            saveSettingsToStorage();
+            renderSavingsTab();
+        }
+
+        function deleteSavingsCard(cardId) {
+            if (savingsCards.length <= 1) {
+                showToast('يجب الإبقاء على بطاقة واحدة على الأقل', true);
+                return;
+            }
+            openConfirmModal('حذف البطاقة', 'هل أنت متأكد من حذف هذه البطاقة وجدولها؟', () => {
+                savingsCards = savingsCards.filter(c => c.id !== cardId);
+                saveSettingsToStorage();
+                renderSavingsTab();
+                showToast('تم حذف البطاقة');
+            });
+        }
+
+        function renderSavingsTab() {
+            const balEl = document.getElementById('savingsTotalBalance');
+            const depEl = document.getElementById('savingsTotalDeposits');
+            const witEl = document.getElementById('savingsTotalWithdrawals');
+
+            let totalDeposits = 0;
+            let totalWithdrawals = 0;
+            savingsTransactions.forEach(tx => {
+                const amt = Number(tx.amount) || 0;
+                if (amt >= 0) totalDeposits += amt;
+                else totalWithdrawals += Math.abs(amt);
+            });
+
+            if (balEl) balEl.textContent = formatCurrencyEGP(savingsBalance);
+            if (depEl) depEl.textContent = `+${formatCurrencyEGP(totalDeposits)}`;
+            if (witEl) witEl.textContent = `-${formatCurrencyEGP(totalWithdrawals)}`;
+
+            const container = document.getElementById('savingsCardsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (!Array.isArray(savingsCards) || !savingsCards.length) {
+                savingsCards = [createDefaultSavingsCard('جمعية', 20)];
+            }
+
+            savingsCards.forEach((card) => {
+                const rows = Array.isArray(card.rows) ? card.rows : [];
+                const cardSum = rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+
+                const wrapper = document.createElement('section');
+                wrapper.className = 'space-y-3';
+
+                wrapper.innerHTML = `
+                    <div class="bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 text-white rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs font-bold text-amber-100">بطاقة جمعية / ادخار</span>
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 rounded-xl bg-white/15 border border-white/20 text-xs font-extrabold tabular-nums">${rows.length} رقم</span>
+                                ${savingsCards.length > 1 ? `<button type="button" onclick="deleteSavingsCard('${card.id}')" class="px-2.5 py-1 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-extrabold cursor-pointer">حذف</button>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-amber-100 mb-1">اسم البطاقة</label>
+                                <input type="text" value="${(card.title || '').replace(/"/g, '&quot;')}" onchange="updateSavingsCardTitle('${card.id}', this.value)" class="w-full px-3.5 py-2 rounded-xl bg-white/95 text-slate-900 text-xs sm:text-sm font-extrabold focus:outline-none focus:ring-2 focus:ring-white">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-amber-100 mb-1">عدد الأرقام في الجدول</label>
+                                <input type="number" min="1" max="200" value="${rows.length}" onchange="updateSavingsCardCount('${card.id}', this.value)" class="w-full px-3.5 py-2 rounded-xl bg-white/95 text-slate-900 text-xs sm:text-sm font-extrabold focus:outline-none focus:ring-2 focus:ring-white tabular-nums">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/65 backdrop-blur-xl rounded-3xl border border-white/80 shadow-lg shadow-amber-900/5 overflow-hidden">
+                        <div class="px-4 py-3 bg-white/40 backdrop-blur-md border-b border-white/70 flex items-center justify-between gap-2">
+                            <span class="text-xs sm:text-sm font-extrabold text-slate-800">جدول ${card.title || 'جمعية'} (${rows.length} رقم)</span>
+                            <span class="text-xs font-extrabold text-amber-800 bg-amber-100/80 border border-amber-200/80 px-3 py-1 rounded-full tabular-nums">المجموع: ${formatCurrencyEGP(cardSum)}</span>
+                        </div>
+                        <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                            <table class="w-full text-right border-collapse">
+                                <thead class="sticky top-0 z-10">
+                                    <tr class="bg-slate-900/85 backdrop-blur-md text-white text-[11px] sm:text-xs font-extrabold">
+                                        <th class="py-2.5 px-3 w-16 text-center">م</th>
+                                        <th class="py-2.5 px-3">البيان / العضو</th>
+                                        <th class="py-2.5 px-3 w-36 text-left">القيمة (ج.م)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200/50 bg-white/40 text-xs sm:text-sm">
+                                    ${rows.map((r, idx) => `
+                                        <tr>
+                                            <td class="py-2 px-3 text-center font-extrabold text-amber-700 tabular-nums">${idx + 1}</td>
+                                            <td class="py-2 px-3">
+                                                <input type="text" value="${(r.note || '').replace(/"/g, '&quot;')}" placeholder="اسم / ملاحظة رقم ${idx + 1}" onchange="updateSavingsRowField('${card.id}', ${idx}, 'note', this.value)" class="w-full px-2.5 py-1.5 rounded-lg bg-white/80 border border-slate-200/80 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                            </td>
+                                            <td class="py-2 px-3 text-left">
+                                                <input type="number" step="0.01" value="${r.amount ?? ''}" placeholder="0" onchange="updateSavingsRowField('${card.id}', ${idx}, 'amount', this.value)" class="w-full px-2.5 py-1.5 rounded-lg bg-white/80 border border-slate-200/80 text-xs font-extrabold text-slate-900 text-left focus:outline-none focus:ring-2 focus:ring-amber-500 tabular-nums">
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(wrapper);
+            });
+        }
+
+        function getMonthExpenseSummary(monthKey) {
+            const { startDate, endDate } = getMonthDateRange(monthKey || selectedExpenseMonthKey);
+            const startISO = toLocalISO(startDate);
+            const endISO = toLocalISO(endDate);
+            const totalSpent = expenses
+                .filter(exp => exp && exp.date >= startISO && exp.date <= endISO)
+                .reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
+            const opening = Number(openingBudgets[monthKey || selectedExpenseMonthKey]) || 0;
+            const diff = opening - totalSpent;
+            return { opening, totalSpent, diff };
+        }
+
+        function syncSavingsWithMonthDiff(monthKey, diffAmount) {
+            try {
+                const key = monthKey || selectedExpenseMonthKey;
+                const amount = Number(diffAmount) || 0;
+                const existingIdx = savingsTransactions.findIndex(tx => tx && tx.monthKey === key);
+                const prevAmount = existingIdx >= 0 ? (Number(savingsTransactions[existingIdx].amount) || 0) : 0;
+                const delta = amount - prevAmount;
+                savingsBalance = Number((savingsBalance + delta).toFixed(2));
+                if (existingIdx >= 0) {
+                    savingsTransactions[existingIdx] = {
+                        ...savingsTransactions[existingIdx],
+                        amount,
+                        updatedAt: new Date().toISOString()
+                    };
+                } else {
+                    savingsTransactions.push({
+                        id: `tx_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                        monthKey: key,
+                        amount,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+                saveSettingsToStorage();
+                if (currentActiveTab === 'savings') {
+                    renderSavingsTab();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function saveOpeningBudget() {
+            const inp = document.getElementById('inputOpeningBudget');
+            const val = Number(inp?.value);
+            if (Number.isNaN(val) || val < 0) {
+                showToast('أدخل مبلغاً رئيسياً صحيحاً', true);
+                return;
+            }
+            openingBudgets[selectedExpenseMonthKey] = val;
+            saveSettingsToStorage();
+            renderExpensesTab();
+            const summary = getMonthExpenseSummary(selectedExpenseMonthKey);
+            syncSavingsWithMonthDiff(selectedExpenseMonthKey, summary.diff);
+            showToast('تم حفظ المبلغ الرئيسي');
+        }
+
+        function setExpenseFilter(filterVal) {
+            activeExpenseFilter = filterVal || 'الكل';
+            document.querySelectorAll('.exp-filter-btn').forEach(btn => {
+                const isActive = btn.getAttribute('data-filter') === activeExpenseFilter;
+                btn.className = isActive
+                    ? 'exp-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-white cursor-pointer'
+                    : 'exp-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 cursor-pointer';
+            });
+            renderExpensesTab();
+        }
+
+        function stepExpenseMonth(delta) {
+            selectedExpenseMonthKey = stepCycleKey(selectedExpenseMonthKey, delta);
+            renderExpensesTab();
+        }
+
+        function jumpToCurrentExpenseMonth() {
+            selectedExpenseMonthKey = getCurrentMonthKey();
+            renderExpensesTab();
+            showToast('تم الانتقال إلى الشهر الحالي');
+        }
+
+        function onExpenseMonthChange() {
+            const picker = document.getElementById('expenseMonthPicker');
+            if (picker && picker.value) {
+                selectedExpenseMonthKey = picker.value;
+                renderExpensesTab();
+            }
+        }
+
+        function captureCurrentLocation() {
+            return new Promise((resolve) => {
+                try {
+                    if (!navigator.geolocation) {
+                        resolve(null);
+                        return;
+                    }
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            resolve({
+                                lat: Number(pos.coords.latitude.toFixed(6)),
+                                lng: Number(pos.coords.longitude.toFixed(6)),
+                                accuracy: Math.round(pos.coords.accuracy || 0),
+                                capturedAt: new Date().toISOString()
+                            });
+                        },
+                        () => resolve(null),
+                        { enableHighAccuracy: true, timeout: 6000, maximumAge: 15000 }
+                    );
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        }
+
+        function refreshGeoPermissionStatus() {
+            const statusEl = document.getElementById('geoPermissionStatusText');
+            if (!statusEl) return;
+            if (!navigator.geolocation) {
+                statusEl.textContent = 'المتصفح لا يدعم تحديد الموقع الجغرافي';
+                return;
+            }
+            if (navigator.permissions && navigator.permissions.query) {
+                navigator.permissions.query({ name: 'geolocation' }).then((res) => {
+                    if (res.state === 'granted') statusEl.textContent = 'ممنوح (الموقع الجغرافي مفعّل)';
+                    else if (res.state === 'denied') statusEl.textContent = 'مرفوض (يرجى تفعيله من إعدادات المتصفح)';
+                    else statusEl.textContent = 'بانتظار منح الإذن';
+                }).catch(() => {
+                    statusEl.textContent = 'جاهز لطلب الإذن عند التسجيل';
+                });
+            } else {
+                statusEl.textContent = 'جاهز لطلب الإذن عند التسجيل';
+            }
+        }
+
+        async function requestGeoPermissionExplicitly() {
+            const loc = await captureCurrentLocation();
+            refreshGeoPermissionStatus();
+            if (loc) {
+                showToast('تم تحديد الموقع الجغرافي بنجاح');
+            } else {
+                showToast('تعذر الحصول على الموقع أو لم يُمنح الإذن', true);
+            }
+        }
+
+        function updateLiveClock() {
+            try {
+                const now = new Date();
+                const t12 = formatTime12Arabic(now);
+                const clockEl = document.getElementById('liveClock');
+                const periodEl = document.getElementById('livePeriod');
+                const dateEl = document.getElementById('liveDate');
+                if (clockEl) clockEl.textContent = t12.hms;
+                if (periodEl) periodEl.textContent = t12.period;
+                if (dateEl) {
+                    dateEl.textContent = now.toLocaleDateString('ar-EG', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
+
+                if (activeSession && activeSession.startTime) {
+                    const startMs = new Date(activeSession.startTime).getTime();
+                    const elapsedMins = Number.isNaN(startMs) ? 0 : calculateElapsedMinutes(startMs, Date.now());
+                    const elapsedEl = document.getElementById('activeShiftElapsed');
+                    if (elapsedEl) elapsedEl.textContent = formatMinutesToHHMM(elapsedMins);
+                    if (currentActiveTab === 'home') {
+                        renderHomeTab();
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderHomeTab() {
+            const statusDot = document.getElementById('shiftStatusDot');
+            const statusText = document.getElementById('shiftStatusText');
+            const activeInfo = document.getElementById('activeShiftInfo');
+            const activeStart = document.getElementById('activeShiftStart');
+            const activeElapsed = document.getElementById('activeShiftElapsed');
+            const btnIn = document.getElementById('btnCheckIn');
+            const btnOut = document.getElementById('btnCheckOut');
+
+            const isSessionValid = Boolean(activeSession && activeSession.startTime && !Number.isNaN(new Date(activeSession.startTime).getTime()));
+
+            if (isSessionValid) {
+                if (statusDot) statusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-300 animate-pulse';
+                if (statusText) statusText.textContent = 'على رأس العمل الآن';
+                if (activeInfo) activeInfo.classList.remove('hidden');
+                if (activeStart) {
+                    const startFmt = formatTime12Arabic(new Date(activeSession.startTime));
+                    activeStart.textContent = `${startFmt.hm} ${startFmt.period}`;
+                }
+                if (activeElapsed) {
+                    const mins = calculateElapsedMinutes(new Date(activeSession.startTime).getTime(), Date.now());
+                    activeElapsed.textContent = formatMinutesToHHMM(mins);
+                }
+                if (btnIn) btnIn.disabled = true;
+                if (btnOut) btnOut.disabled = false;
+            } else {
+                if (statusDot) statusDot.className = 'w-2.5 h-2.5 rounded-full bg-blue-200';
+                if (statusText) statusText.textContent = 'خارج العمل';
+                if (activeInfo) activeInfo.classList.add('hidden');
+                if (btnIn) btnIn.disabled = false;
+                if (btnOut) btnOut.disabled = true;
+            }
+
+            const todayISO = toLocalISO(new Date());
+            const todayRec = records.find(r => r.date === todayISO);
+            let todayMins = todayRec ? getRecordMinutes(todayRec) : 0;
+            if (isSessionValid && activeSession.date === todayISO) {
+                const sessionMins = calculateElapsedMinutes(new Date(activeSession.startTime).getTime(), Date.now());
+                const baseRecordedMins = todayRec && typeof todayRec.minutes === 'number' ? todayRec.minutes : 0;
+                todayMins = Math.max(baseRecordedMins, sessionMins);
+            }
+
+            const hrsEl = document.getElementById('homeTodayHours');
+            const stEl = document.getElementById('homeTodayStatus');
+            if (hrsEl) hrsEl.textContent = `${(todayMins / 60).toFixed(2)} س (${todayMins} د)`;
+            if (stEl) {
+                if (isSessionValid && activeSession.date === todayISO) {
+                    stEl.textContent = 'جاري العمل';
+                    stEl.className = 'text-sm sm:text-base font-extrabold text-emerald-600 mt-2 block';
+                } else if (todayRec && STATUS_META[todayRec.status]) {
+                    stEl.textContent = STATUS_META[todayRec.status].label;
+                    stEl.className = 'text-sm sm:text-base font-extrabold text-blue-700 mt-2 block';
+                } else {
+                    stEl.textContent = 'لم يُسجل';
+                    stEl.className = 'text-sm sm:text-base font-extrabold text-slate-600 mt-2 block';
+                }
+            }
+
+            const currentYear = new Date().getFullYear();
+            const yearStartISO = `${currentYear}-01-01`;
+            const yearEndISO = `${currentYear}-12-31`;
+            const yearRecords = records.filter(r => r && r.date >= yearStartISO && r.date <= yearEndISO);
+            const usedRegular = yearRecords.filter(r => r.status === 'regular').length;
+            const usedCasual = yearRecords.filter(r => r.status === 'casual').length;
+
+            const remRegular = Math.max(0, 15 - usedRegular);
+            const remCasual = Math.max(0, 7 - usedCasual);
+
+            const regEl = document.getElementById('homeRegularLeaveRemaining');
+            const casEl = document.getElementById('homeCasualLeaveRemaining');
+            if (regEl) regEl.textContent = `${remRegular} يوم`;
+            if (casEl) casEl.textContent = `${remCasual} أيام`;
+        }
+
+        async function handleCheckIn() {
+            try {
+                if (activeSession && activeSession.startTime) {
+                    showToast('يوجد تسجيل حضور نشط بالفعل', true);
+                    renderHomeTab();
+                    return;
+                }
+                const now = new Date();
+                const iso = toLocalISO(now);
+                const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+                activeSession = {
+                    date: iso,
+                    checkIn: hhmm,
+                    startTime: now.toISOString(),
+                    checkInLocation: null
+                };
+                localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, JSON.stringify(activeSession));
+
+                const existingIdx = records.findIndex(r => r.date === iso);
+                const existing = existingIdx >= 0 ? records[existingIdx] : {};
+                const updatedRec = {
+                    ...existing,
+                    date: iso,
+                    status: existing.status === 'powerall' ? 'powerall' : 'present',
+                    checkIn: hhmm
+                };
+                if (existingIdx >= 0) records[existingIdx] = updatedRec;
+                else records.push(updatedRec);
+                saveRecordsToStorage();
+
+                renderHomeTab();
+                renderAttendanceTab();
+                renderSalaryTab();
+                showToast('تم تسجيل الحضور وبدء حساب الدقائق');
+
+                const loc = await captureCurrentLocation();
+                if (loc) {
+                    if (activeSession && activeSession.date === iso) {
+                        activeSession.checkInLocation = loc;
+                        localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, JSON.stringify(activeSession));
+                    }
+                    const recIdx = records.findIndex(r => r.date === iso);
+                    if (recIdx >= 0) {
+                        records[recIdx].checkInLocation = loc;
+                        saveRecordsToStorage();
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('حدث خطأ أثناء تسجيل الحضور', true);
+            }
+        }
+
+        async function handleCheckOut() {
+            try {
+                if (!activeSession || !activeSession.startTime) {
+                    showToast('لا توجد وردية حضور نشطة لتسجيل الانصراف', true);
+                    renderHomeTab();
+                    return;
+                }
+                const now = new Date();
+                const startMs = new Date(activeSession.startTime).getTime();
+                const sessionMins = Number.isNaN(startMs) ? 1 : calculateElapsedMinutes(startMs, now.getTime());
+                const iso = activeSession.date || toLocalISO(now);
+                const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+                const existingIdx = records.findIndex(r => r.date === iso);
+                const existing = existingIdx >= 0 ? records[existingIdx] : {};
+                const prevMins = existing && typeof existing.minutes === 'number' ? existing.minutes : 0;
+                const finalMins = Math.max(prevMins, sessionMins);
+
+                const updatedRec = {
+                    ...existing,
+                    date: iso,
+                    status: existing.status === 'powerall' ? 'powerall' : 'present',
+                    checkIn: activeSession.checkIn || existing.checkIn || hhmm,
+                    checkOut: hhmm,
+                    minutes: finalMins,
+                    checkInLocation: activeSession.checkInLocation || existing.checkInLocation || null
+                };
+                if (existingIdx >= 0) records[existingIdx] = updatedRec;
+                else records.push(updatedRec);
+                saveRecordsToStorage();
+
+                activeSession = null;
+                localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
+
+                renderHomeTab();
+                renderAttendanceTab();
+                renderSalaryTab();
+                showToast(`تم تسجيل الانصراف (${finalMins} دقيقة)`);
+
+                const loc = await captureCurrentLocation();
+                if (loc) {
+                    const recIdx = records.findIndex(r => r.date === iso);
+                    if (recIdx >= 0) {
+                        records[recIdx].checkOutLocation = loc;
+                        saveRecordsToStorage();
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('حدث خطأ أثناء تسجيل الانصراف', true);
+            }
+        }
+
+        function stepCycleMonth(delta) {
+            selectedCycleKey = stepCycleKey(selectedCycleKey, delta);
+            renderAttendanceTab();
+        }
+
+        function jumpToCurrentCycle() {
+            selectedCycleKey = getCurrentCycleKey();
+            renderAttendanceTab();
+            renderSalaryTab();
+            showToast('تم الانتقال إلى الدورة الحالية');
+        }
+
+        function onCycleMonthChange() {
+            const picker = document.getElementById('cycleMonthPicker');
+            if (picker && picker.value) {
+                selectedCycleKey = picker.value;
+                renderAttendanceTab();
+            }
+        }
+
+        function renderAttendanceTab() {
+            const picker = document.getElementById('cycleMonthPicker');
+            if (picker) picker.value = selectedCycleKey;
+
+            const { startDate, endDate } = getCycleDateRange(selectedCycleKey);
+            const labelEl = document.getElementById('cycleRangeLabel');
+            if (labelEl) {
+                labelEl.textContent = `الدورة: من ${startDate.toLocaleDateString('ar-EG')} إلى ${endDate.toLocaleDateString('ar-EG')}`;
+            }
+
+            let totalMins = 0;
+            let presentCount = 0;
+            const tempCursor = new Date(startDate);
+            while (tempCursor <= endDate) {
+                const iso = toLocalISO(tempCursor);
+                const rec = records.find(r => r.date === iso);
+                if (rec) {
+                    totalMins += getRecordMinutes(rec);
+                    if (rec.status === 'present' || rec.status === 'powerall') {
+                        presentCount += 1;
+                    }
+                }
+                tempCursor.setDate(tempCursor.getDate() + 1);
+            }
+
+            const totHrsEl = document.getElementById('attendanceTotalHours');
+            const presDaysEl = document.getElementById('attendancePresentDays');
+            if (totHrsEl) totHrsEl.textContent = formatDurationHoursMinutes(totalMins);
+            if (presDaysEl) presDaysEl.textContent = `${presentCount} يوم`;
+
+            const gridEl = document.getElementById('attendanceGrid');
+            if (!gridEl) return;
+            gridEl.innerHTML = '';
+
+            const firstDayOfWeek = startDate.getDay(); // 0=الأحد .. 6=السبت
+            const leadingBlanks = (firstDayOfWeek + 1) % 7; // لأن العمود الأول هو السبت
+            for (let b = 0; b < leadingBlanks; b++) {
+                const blankCell = document.createElement('div');
+                blankCell.className = 'h-16 sm:h-20 rounded-xl bg-slate-50/60 border border-dashed border-slate-200/70';
+                gridEl.appendChild(blankCell);
+            }
+
+            const todayISO = toLocalISO(new Date());
+            const cursor = new Date(startDate);
+            while (cursor <= endDate) {
+                const iso = toLocalISO(cursor);
+                const dayNum = cursor.getDate();
+                const isFriday = cursor.getDay() === 5;
+                const isToday = iso === todayISO;
+                const rec = records.find(r => r.date === iso);
+                const effectiveStatus = rec ? rec.status : (isFriday ? 'holiday' : '');
+                const meta = STATUS_META[effectiveStatus];
+
+                const cell = document.createElement('button');
+                cell.type = 'button';
+                cell.onclick = () => openDayDetailsModal(iso);
+                cell.className = `h-16 sm:h-20 p-1.5 rounded-xl border text-right flex flex-col justify-between transition-all cursor-pointer ${
+                    meta ? meta.bg : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-800'
+                } ${isToday ? 'ring-2 ring-blue-600 ring-offset-1' : ''}`;
+
+                const mins = rec ? getRecordMinutes(rec) : 0;
+                cell.innerHTML = `
+                    <div class="flex items-center justify-between gap-1">
+                        <span class="text-xs sm:text-sm font-extrabold tabular-nums">${dayNum}</span>
+                        ${isToday ? '<span class="px-1.5 py-0.5 rounded bg-blue-600 text-white text-[9px] font-extrabold">اليوم</span>' : ''}
+                    </div>
+                    <div class="truncate text-[10px] font-extrabold">
+                        ${meta ? meta.label : ''}
+                    </div>
+                    <div class="truncate text-[9px] font-bold opacity-80 tabular-nums">
+                        ${mins > 0 ? formatDurationHoursMinutes(mins, true) : ''}
+                    </div>
+                `;
+                gridEl.appendChild(cell);
+                cursor.setDate(cursor.getDate() + 1);
+            }
+        }
+
+        function openDayDetailsModal(isoDate) {
+            const rec = records.find(r => r.date === isoDate) || { date: isoDate };
+            const [y, m, d] = isoDate.split('-').map(Number);
+            const dt = new Date(y, (m || 1) - 1, d || 1);
+            const dateLabel = document.getElementById('dayDetailsDateLabel');
+            const bodyEl = document.getElementById('dayDetailsBody');
+            const editBtn = document.getElementById('btnOpenEditFromDetails');
+
+            if (dateLabel) {
+                dateLabel.textContent = dt.toLocaleDateString('ar-EG', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+
+            const statusLabel = STATUS_META[rec.status]?.label || (dt.getDay() === 5 ? 'جمعة / إجازة رسمية' : 'غير مسجل');
+            const mins = getRecordMinutes(rec);
+            const locInText = rec.checkInLocation
+                ? `${rec.checkInLocation.lat}, ${rec.checkInLocation.lng}`
+                : 'غير مسجل';
+            const locOutText = rec.checkOutLocation
+                ? `${rec.checkOutLocation.lat}, ${rec.checkOutLocation.lng}`
+                : 'غير مسجل';
+
+            if (bodyEl) {
+                bodyEl.innerHTML = `
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70 flex justify-between">
+                        <span class="font-bold text-slate-500">الحالة:</span>
+                        <span class="font-extrabold text-slate-800">${statusLabel}</span>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70 flex justify-between">
+                        <span class="font-bold text-slate-500">مدة العمل:</span>
+                        <span class="font-extrabold text-blue-700 tabular-nums">${formatDurationHoursMinutes(mins)}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+                            <span class="text-[11px] font-bold text-slate-500 block">وقت الحضور</span>
+                            <span class="font-extrabold text-slate-800 tabular-nums">${rec.checkIn || '--:--'}</span>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+                            <span class="text-[11px] font-bold text-slate-500 block">وقت الانصراف</span>
+                            <span class="font-extrabold text-slate-800 tabular-nums">${rec.checkOut || '--:--'}</span>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-1">
+                        <div class="text-xs"><span class="font-bold text-slate-500">موقع الحضور:</span> <span class="font-extrabold text-slate-800 tabular-nums">${locInText}</span></div>
+                        <div class="text-xs"><span class="font-bold text-slate-500">موقع الانصراف:</span> <span class="font-extrabold text-slate-800 tabular-nums">${locOutText}</span></div>
+                    </div>
+                    ${rec.note ? `<div class="p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-xs font-bold text-amber-900">ملاحظة: ${rec.note}</div>` : ''}
+                `;
+            }
+
+            if (editBtn) {
+                editBtn.onclick = () => {
+                    closeDayDetailsModal();
+                    openDayModal(isoDate);
+                };
+            }
+
+            document.getElementById('dayDetailsModal')?.classList.remove('hidden');
+        }
+
+        function closeDayDetailsModal() {
+            document.getElementById('dayDetailsModal')?.classList.add('hidden');
+        }
+
+        function openDayModal(isoDate) {
+            const rec = records.find(r => r.date === isoDate) || { date: isoDate, status: 'present' };
+            document.getElementById('editDayISO').value = isoDate;
+            document.getElementById('dayModalDateLabel').textContent = isoDate;
+            document.getElementById('editDayStatus').value = rec.status || 'present';
+            document.getElementById('editDayCheckIn').value = rec.checkIn || '';
+            document.getElementById('editDayCheckOut').value = rec.checkOut || '';
+            document.getElementById('editDayNote').value = rec.note || '';
+            toggleDayTimeInputs();
+            document.getElementById('dayModal')?.classList.remove('hidden');
+        }
+
+        function closeDayModal() {
+            document.getElementById('dayModal')?.classList.add('hidden');
+        }
+
+        function toggleDayTimeInputs() {
+            const st = document.getElementById('editDayStatus')?.value;
+            const grp = document.getElementById('dayTimeInputsGroup');
+            if (grp) {
+                grp.classList.toggle('hidden', !['present', 'powerall'].includes(st));
+            }
+        }
+
+        function saveDayRecord(event) {
+            event.preventDefault();
+            const iso = document.getElementById('editDayISO')?.value;
+            if (!iso) return;
+            const status = document.getElementById('editDayStatus')?.value || 'present';
+            const checkIn = document.getElementById('editDayCheckIn')?.value || '';
+            const checkOut = document.getElementById('editDayCheckOut')?.value || '';
+            const note = document.getElementById('editDayNote')?.value.trim() || '';
+
+            const idx = records.findIndex(r => r.date === iso);
+            const prev = idx >= 0 ? records[idx] : {};
+            const updated = {
+                ...prev,
+                date: iso,
+                status,
+                checkIn: ['present', 'powerall'].includes(status) ? checkIn : '',
+                checkOut: ['present', 'powerall'].includes(status) ? checkOut : '',
+                note
+            };
+            delete updated.minutes;
+            updated.minutes = getRecordMinutes(updated);
+
+            if (idx >= 0) records[idx] = updated;
+            else records.push(updated);
+
+            saveRecordsToStorage();
+            closeDayModal();
+            renderAttendanceTab();
+            renderHomeTab();
+            renderSalaryTab();
+            showToast('تم حفظ سجل اليوم');
+        }
+
+        function deleteDayRecord() {
+            const iso = document.getElementById('editDayISO')?.value;
+            if (!iso) return;
+            records = records.filter(r => r.date !== iso);
+            saveRecordsToStorage();
+            closeDayModal();
+            renderAttendanceTab();
+            renderHomeTab();
+            renderSalaryTab();
+            showToast('تم مسح سجل اليوم');
+        }
+
+        function stepSalaryMonth(delta) {
+            selectedCycleKey = stepCycleKey(selectedCycleKey, delta);
+            renderSalaryTab();
+        }
+
+        function onSalaryMonthChange() {
+            const picker = document.getElementById('salaryMonthPicker');
+            if (picker && picker.value) {
+                selectedCycleKey = picker.value;
+                renderSalaryTab();
+            }
+        }
+
+        function renderSalaryTab() {
+            const picker = document.getElementById('salaryMonthPicker');
+            if (picker) picker.value = selectedCycleKey;
+
+            const { startDate, endDate } = getCycleDateRange(selectedCycleKey);
+            const labelEl = document.getElementById('salarySelectedCycleRange');
+            if (labelEl) {
+                labelEl.textContent = `الدورة: من ${startDate.toLocaleDateString('ar-EG')} إلى ${endDate.toLocaleDateString('ar-EG')}`;
+            }
+
+            let totalMins = 0;
+            const cur = new Date(startDate);
+            while (cur <= endDate) {
+                const rec = records.find(r => r.date === toLocalISO(cur));
+                if (rec) totalMins += getRecordMinutes(rec);
+                cur.setDate(cur.getDate() + 1);
+            }
+
+            const totalHours = totalMins / 60;
+            const basePay = Number((totalHours * (Number(dailyRate) || 0)).toFixed(2));
+
+            let itemsNet = 0;
+            const tbody = document.getElementById('salaryItemsTableBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                if (!adjustmentItems.length) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="py-4 px-4 text-center text-slate-500 font-bold">لا توجد إضافات أو خصومات</td></tr>`;
+                } else {
+                    adjustmentItems.forEach(item => {
+                        const amt = Number(item.amount) || 0;
+                        const signed = item.type === 'deduction' ? -amt : amt;
+                        itemsNet += signed;
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="py-2.5 px-4 font-extrabold text-slate-800">${item.title}</td>
+                            <td class="py-2.5 px-4 font-bold ${item.type === 'deduction' ? 'text-rose-600' : 'text-emerald-600'}">${item.type === 'deduction' ? 'خصم' : 'إضافة'}</td>
+                            <td class="py-2.5 px-4 font-extrabold tabular-nums ${item.type === 'deduction' ? 'text-rose-700' : 'text-emerald-700'}">${signed >= 0 ? '+' : ''}${formatCurrencyEGP(signed)}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            }
+
+            const netPay = Math.max(0, Number((basePay + itemsNet).toFixed(2)));
+            const netEl = document.getElementById('salaryNetAmount');
+            const baseEl = document.getElementById('salaryBaseAmount');
+            const badgeEl = document.getElementById('salaryItemsTotalBadge');
+            if (netEl) netEl.textContent = formatCurrencyEGP(netPay);
+            if (baseEl) baseEl.textContent = formatCurrencyEGP(basePay);
+            if (badgeEl) badgeEl.textContent = `${itemsNet >= 0 ? '+' : ''}${formatCurrencyEGP(itemsNet)}`;
+
+            applySalaryBlurState();
+        }
+
+        function applySalaryBlurState() {
+            const shouldBlur = Boolean(salaryPin) && (!isSalaryUnlocked || isSalaryBlurred);
+            const netEl = document.getElementById('salaryNetAmount');
+            const baseEl = document.getElementById('salaryBaseAmount');
+            const openIcon = document.getElementById('eyeOpenIcon');
+            const closedIcon = document.getElementById('eyeClosedIcon');
+
+            [netEl, baseEl].forEach(el => {
+                if (!el) return;
+                el.classList.toggle('salary-amount-blurred', shouldBlur);
+                el.classList.toggle('salary-amount-clear', !shouldBlur);
+            });
+            if (openIcon) openIcon.classList.toggle('hidden', shouldBlur);
+            if (closedIcon) closedIcon.classList.toggle('hidden', !shouldBlur);
+        }
+
+        function toggleSalaryVisibility() {
+            if (!salaryPin) {
+                isSalaryBlurred = !isSalaryBlurred;
+                applySalaryBlurState();
+                return;
+            }
+            if (isSalaryUnlocked && !isSalaryBlurred) {
+                isSalaryBlurred = true;
+                applySalaryBlurState();
+                return;
+            }
+            pinModalMode = 'unlock';
+            const inp = document.getElementById('unlockSalaryPinInput');
+            const err = document.getElementById('salaryPinErrorText');
+            if (inp) inp.value = '';
+            if (err) err.classList.add('hidden');
+            document.getElementById('salaryPinModal')?.classList.remove('hidden');
+        }
+
+        function closeSalaryPinModal() {
+            document.getElementById('salaryPinModal')?.classList.add('hidden');
+        }
+
+        function verifySalaryPin(event) {
+            event.preventDefault();
+            const inp = document.getElementById('unlockSalaryPinInput');
+            const err = document.getElementById('salaryPinErrorText');
+            const entered = (inp?.value || '').trim();
+            if (entered === salaryPin) {
+                isSalaryUnlocked = true;
+                isSalaryBlurred = false;
+                closeSalaryPinModal();
+                applySalaryBlurState();
+                showToast('تم فتح عرض المرتب');
+            } else if (err) {
+                err.classList.remove('hidden');
+            }
+        }
+
+        function renderExpensesTab() {
+            const picker = document.getElementById('expenseMonthPicker');
+            if (picker) picker.value = selectedExpenseMonthKey;
+
+            const { startDate, endDate } = getMonthDateRange(selectedExpenseMonthKey);
+            const labelEl = document.getElementById('expensesSelectedMonthLabel');
+            const captionEl = document.getElementById('expensesCycleCaption');
+            if (labelEl) {
+                labelEl.textContent = `الشهر المحدد: ${endDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}`;
+            }
+            if (captionEl) {
+                captionEl.textContent = `من ${startDate.toLocaleDateString('ar-EG')} حتى ${endDate.toLocaleDateString('ar-EG')}`;
+            }
+
+            const startISO = toLocalISO(startDate);
+            const endISO = toLocalISO(endDate);
+
+            const monthExpenses = expenses.filter(exp => exp && exp.date >= startISO && exp.date <= endISO);
+            const dailyList = monthExpenses.filter(e => e.kind === 'daily');
+            const monthlyList = monthExpenses.filter(e => e.kind === 'monthly');
+
+            const dailySum = dailyList.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+            const monthlySum = monthlyList.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+            const totalSpent = dailySum + monthlySum;
+
+            const opening = Number(openingBudgets[selectedExpenseMonthKey]) || 0;
+            const openInput = document.getElementById('inputOpeningBudget');
+            if (openInput && document.activeElement !== openInput) {
+                openInput.value = opening > 0 ? opening : '';
+            }
+
+            const remaining = opening - totalSpent;
+            document.getElementById('expensesOpeningAmount').textContent = formatCurrencyEGP(opening);
+            document.getElementById('expensesTotalAmount').textContent = formatCurrencyEGP(totalSpent);
+            const remEl = document.getElementById('expensesRemainingAmount');
+            if (remEl) {
+                remEl.textContent = formatCurrencyEGP(remaining);
+                remEl.className = remaining < 0
+                    ? 'text-sm sm:text-xl font-extrabold text-rose-200 block mt-0.5 tabular-nums'
+                    : 'text-sm sm:text-xl font-extrabold text-emerald-200 block mt-0.5 tabular-nums';
+            }
+
+            const dailySec = document.getElementById('dailyExpensesSection');
+            const monthlySec = document.getElementById('monthlyExpensesSection');
+            if (dailySec) dailySec.classList.toggle('hidden', activeExpenseFilter === 'monthly');
+            if (monthlySec) monthlySec.classList.toggle('hidden', activeExpenseFilter === 'daily');
+
+            renderExpenseGroupedTable('daily', dailyList, dailySum, 'dailyExpensesTableBody', 'dailyExpensesTableFoot', 'dailyTableCountBadge');
+            renderExpenseGroupedTable('monthly', monthlyList, monthlySum, 'monthlyExpensesTableBody', 'monthlyExpensesTableFoot', 'monthlyTableCountBadge');
+        }
+
+        function renderExpenseGroupedTable(kind, list, totalSum, bodyId, footId, badgeId) {
+            const tbody = document.getElementById(bodyId);
+            const tfoot = document.getElementById(footId);
+            const badge = document.getElementById(badgeId);
+            if (!tbody || !tfoot) return;
+
+            const grouped = {};
+            list.forEach(item => {
+                const key = item.item || 'بند عام';
+                grouped[key] = (grouped[key] || 0) + (Number(item.amount) || 0);
+            });
+            const entries = Object.entries(grouped);
+            if (badge) badge.textContent = `${entries.length} بند`;
+
+            tbody.innerHTML = '';
+            if (!entries.length) {
+                tbody.innerHTML = `<tr><td colspan="2" class="py-5 px-4 text-center text-slate-500 font-bold">لا توجد مصروفات مسجلة في هذه الفترة</td></tr>`;
+            } else {
+                entries.forEach(([title, sum]) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 sm:px-5 font-extrabold text-slate-800">${title}</td>
+                        <td class="py-3 px-4 sm:px-5 text-left font-extrabold text-slate-900 tabular-nums">${formatCurrencyEGP(sum)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td class="py-3 px-4 sm:px-5">الإجمالي</td>
+                    <td class="py-3 px-4 sm:px-5 text-left tabular-nums">${formatCurrencyEGP(totalSum)}</td>
+                </tr>
+            `;
+        }
+
+        function openExpenseModal() {
+            document.getElementById('expenseId').value = '';
+            selectExpenseKind('daily');
+            const defaultItem = savedDailyExpenseItems[0] || 'مواصلات';
+            selectedExpenseItemValue = defaultItem;
+            document.getElementById('selectedExpenseItemBadge').textContent = defaultItem;
+            document.getElementById('inputExpenseAmount').value = '';
+            document.getElementById('inputExpenseDate').value = toLocalISO(new Date());
+            document.getElementById('inputExpenseNote').value = '';
+            document.getElementById('expenseModal')?.classList.remove('hidden');
+        }
+
+        function closeExpenseModal() {
+            document.getElementById('expenseModal')?.classList.add('hidden');
+        }
+
+        function selectExpenseKind(kind) {
+            document.getElementById('inputExpenseKind').value = kind;
+            document.querySelectorAll('.kind-choice-btn').forEach(btn => {
+                const active = btn.getAttribute('data-kind') === kind;
+                btn.className = active
+                    ? 'kind-choice-btn p-2.5 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-700 font-extrabold text-xs sm:text-sm transition-all cursor-pointer'
+                    : 'kind-choice-btn p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-bold text-xs sm:text-sm hover:bg-slate-100 transition-all cursor-pointer';
+            });
+        }
+
+        function openExpenseItemPopover() {
+            const currentKind = document.getElementById('inputExpenseKind')?.value || 'daily';
+            switchPopoverKind(currentKind);
+            document.getElementById('expenseItemPopoverModal')?.classList.remove('hidden');
+        }
+
+        function closeExpenseItemPopover() {
+            document.getElementById('expenseItemPopoverModal')?.classList.add('hidden');
+        }
+
+        function switchPopoverKind(kind) {
+            selectExpenseKind(kind);
+            const tabDaily = document.getElementById('popoverTab-daily');
+            const tabMonthly = document.getElementById('popoverTab-monthly');
+            if (tabDaily && tabMonthly) {
+                tabDaily.className = kind === 'daily'
+                    ? 'py-2 px-3 rounded-xl text-xs font-extrabold bg-rose-600 text-white shadow-xs transition-all cursor-pointer'
+                    : 'py-2 px-3 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-800 transition-all cursor-pointer';
+                tabMonthly.className = kind === 'monthly'
+                    ? 'py-2 px-3 rounded-xl text-xs font-extrabold bg-rose-600 text-white shadow-xs transition-all cursor-pointer'
+                    : 'py-2 px-3 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-800 transition-all cursor-pointer';
+            }
+
+            const listEl = document.getElementById('expenseItemOptionsList');
+            if (!listEl) return;
+            const items = kind === 'daily' ? savedDailyExpenseItems : savedMonthlyExpenseItems;
+            listEl.innerHTML = '';
+
+            if (!items.length) {
+                listEl.innerHTML = `<p class="text-xs text-slate-500 text-center py-3 font-bold">لا توجد بنود محفوظة، أضف بنداً بالأسفل</p>`;
+                return;
+            }
+
+            items.forEach(itemName => {
+                const isSelected = itemName === selectedExpenseItemValue;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.onclick = () => {
+                    selectedExpenseItemValue = itemName;
+                    document.getElementById('selectedExpenseItemBadge').textContent = itemName;
+                    closeExpenseItemPopover();
+                };
+                btn.className = `w-full px-3.5 py-2 rounded-xl text-right text-xs sm:text-sm font-extrabold flex items-center justify-between cursor-pointer transition-colors ${
+                    isSelected ? 'bg-rose-50 text-rose-700 border border-rose-300' : 'bg-slate-50 hover:bg-slate-100 text-slate-800'
+                }`;
+                btn.innerHTML = `<span>${itemName}</span>${isSelected ? '<span>✔</span>' : ''}`;
+                listEl.appendChild(btn);
+            });
+        }
+
+        function confirmAddNewExpenseItem() {
+            const inp = document.getElementById('inputNewExpenseItem');
+            const name = inp?.value.trim();
+            if (!name) return;
+            const kind = document.getElementById('inputExpenseKind')?.value || 'daily';
+            if (kind === 'daily') {
+                if (!savedDailyExpenseItems.includes(name)) savedDailyExpenseItems.push(name);
+            } else {
+                if (!savedMonthlyExpenseItems.includes(name)) savedMonthlyExpenseItems.push(name);
+            }
+            saveSettingsToStorage();
+            selectedExpenseItemValue = name;
+            document.getElementById('selectedExpenseItemBadge').textContent = name;
+            inp.value = '';
+            closeExpenseItemPopover();
+            showToast('تم إضافة البند');
+        }
+
+        function saveExpense() {
+            const kind = document.getElementById('inputExpenseKind')?.value || 'daily';
+            const amount = Number(document.getElementById('inputExpenseAmount')?.value);
+            const date = document.getElementById('inputExpenseDate')?.value || toLocalISO(new Date());
+            const note = document.getElementById('inputExpenseNote')?.value.trim() || '';
+
+            if (!amount || amount <= 0) {
+                showToast('أدخل قيمة صحيحة للمصروف', true);
+                return;
+            }
+
+            expenses.push({
+                id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                kind,
+                item: selectedExpenseItemValue || 'مواصلات',
+                amount,
+                date,
+                note
+            });
+            saveExpensesToStorage();
+            closeExpenseModal();
+            renderExpensesTab();
+            const summary = getMonthExpenseSummary(selectedExpenseMonthKey);
+            syncSavingsWithMonthDiff(selectedExpenseMonthKey, summary.diff);
+            showToast('تم حفظ المصروف');
+        }
+
+        function renderSettingsTab() {
+            document.getElementById('inputDailyRate').value = dailyRate || '';
+
+            const listEl = document.getElementById('settingsItemsList');
+            if (listEl) {
+                listEl.innerHTML = '';
+                if (!adjustmentItems.length) {
+                    listEl.innerHTML = `<p class="p-3 text-xs text-slate-500 text-center font-bold">لا توجد بنود مضافة</p>`;
+                } else {
+                    adjustmentItems.forEach((item, idx) => {
+                        const row = document.createElement('div');
+                        row.className = 'p-3 flex items-center justify-between gap-2 bg-white text-xs sm:text-sm';
+                        row.innerHTML = `
+                            <div>
+                                <span class="font-extrabold text-slate-800">${item.title}</span>
+                                <span class="mr-2 text-xs font-bold ${item.type === 'allowance' ? 'text-emerald-600' : 'text-rose-600'}">(${item.type === 'allowance' ? '+' : '-'}${formatCurrencyEGP(item.amount)})</span>
+                            </div>
+                            <button type="button" onclick="deleteAdjustmentItem(${idx})" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-extrabold cursor-pointer">حذف</button>
+                        `;
+                        listEl.appendChild(row);
+                    });
+                }
+            }
+
+            const lockStatus = document.getElementById('salaryLockStatusText');
+            const removeBtn = document.getElementById('btnRemoveSalaryPin');
+            const curGroup = document.getElementById('currentPinFieldGroup');
+            if (salaryPin) {
+                if (lockStatus) lockStatus.textContent = 'مفعّلة (المرتب محمي بكلمة سر)';
+                if (removeBtn) removeBtn.classList.remove('hidden');
+                if (curGroup) curGroup.classList.remove('hidden');
+            } else {
+                if (lockStatus) lockStatus.textContent = 'غير مفعّلة';
+                if (removeBtn) removeBtn.classList.add('hidden');
+                if (curGroup) curGroup.classList.add('hidden');
+            }
+
+            renderTabBackgroundsUI();
+            refreshGeoPermissionStatus();
+        }
+
+        function toggleSettingsSection(sectionKey) {
+            const bodyEl = document.getElementById(`settingsBody-${sectionKey}`);
+            const arrowEl = document.getElementById(`settingsArrow-${sectionKey}`);
+            if (!bodyEl) return;
+            const willOpen = bodyEl.classList.contains('hidden');
+            bodyEl.classList.toggle('hidden', !willOpen);
+            if (arrowEl) {
+                arrowEl.textContent = willOpen ? '▴' : '▾';
+            }
+        }
+
+        function saveSettingsFromButton() {
+            const rateVal = Number(document.getElementById('inputDailyRate')?.value);
+            dailyRate = Number.isNaN(rateVal) || rateVal < 0 ? 0 : rateVal;
+            saveSettingsToStorage();
+            renderSalaryTab();
+            showToast('تم حفظ سعر الساعة');
+        }
+
+        function addAdjustmentItem(event) {
+            event.preventDefault();
+            const title = document.getElementById('inputItemTitle')?.value.trim();
+            const type = document.getElementById('inputItemType')?.value || 'allowance';
+            const amount = Number(document.getElementById('inputItemAmount')?.value);
+            if (!title || !amount || amount <= 0) return;
+
+            adjustmentItems.push({ title, type, amount });
+            saveSettingsToStorage();
+            document.getElementById('inputItemTitle').value = '';
+            document.getElementById('inputItemAmount').value = '';
+            renderSettingsTab();
+            renderSalaryTab();
+            showToast('تم إضافة البند');
+        }
+
+        function deleteAdjustmentItem(index) {
+            adjustmentItems.splice(index, 1);
+            saveSettingsToStorage();
+            renderSettingsTab();
+            renderSalaryTab();
+            showToast('تم حذف البند');
+        }
+
+        function saveSalaryPin(event) {
+            event.preventDefault();
+            const curInput = document.getElementById('inputCurrentSalaryPin');
+            const newInput = document.getElementById('inputSalaryPin');
+            const newPin = (newInput?.value || '').trim();
+
+            if (salaryPin && curInput && curInput.value.trim() !== salaryPin) {
+                showToast('كلمة السر الحالية غير صحيحة', true);
+                return;
+            }
+            if (newPin.length < 4) {
+                showToast('يجب أن تكون كلمة السر 4 أحرف/أرقام على الأقل', true);
+                return;
+            }
+
+            salaryPin = newPin;
+            isSalaryUnlocked = false;
+            isSalaryBlurred = true;
+            if (curInput) curInput.value = '';
+            if (newInput) newInput.value = '';
+            saveSettingsToStorage();
+            renderSettingsTab();
+            applySalaryBlurState();
+            showToast('تم حفظ كلمة سر المرتب');
+        }
+
+        function removeSalaryPin() {
+            openConfirmModal('إلغاء كلمة السر', 'هل تريد إزالة حماية كلمة السر عن المرتب؟', () => {
+                salaryPin = '';
+                isSalaryUnlocked = false;
+                isSalaryBlurred = false;
+                saveSettingsToStorage();
+                renderSettingsTab();
+                applySalaryBlurState();
+                showToast('تم إلغاء كلمة السر');
+            });
+        }
+
+        function setThemeMode(mode) {
+            themeMode = mode === 'dark' ? 'dark' : 'light';
+            saveSettingsToStorage();
+            applyThemeAndBackground();
+        }
+
+        function renderTabBackgroundsUI() {
+            const container = document.getElementById('tabBackgroundsList');
+            if (!container) return;
+            container.innerHTML = '';
+
+            Object.entries(TAB_LABELS).forEach(([tabKey, label]) => {
+                const hasBg = Boolean(tabBackgrounds[tabKey]);
+                const row = document.createElement('div');
+                row.className = 'p-3 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-2';
+                row.innerHTML = `
+                    <div>
+                        <p class="text-xs font-extrabold text-slate-800">${label}</p>
+                        <p class="text-[11px] font-bold ${hasBg ? 'text-emerald-600' : 'text-slate-400'}">${hasBg ? 'تم تعيين خلفية' : 'بدون خلفية'}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <label class="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-extrabold cursor-pointer">
+                            اختيار صورة
+                            <input type="file" accept="image/*" class="hidden" onchange="handleTabBackgroundFile(event, '${tabKey}')">
+                        </label>
+                        ${hasBg ? `<button type="button" onclick="clearTabBackground('${tabKey}')" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-extrabold cursor-pointer">إزالة</button>` : ''}
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function handleTabBackgroundFile(event, tabKey) {
+            const file = event.target?.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (typeof reader.result === 'string') {
+                    tabBackgrounds[tabKey] = reader.result;
+                    saveSettingsToStorage();
+                    applyThemeAndBackground();
+                    renderTabBackgroundsUI();
+                    showToast(`تم تعيين خلفية لتبويب ${TAB_LABELS[tabKey] || ''}`);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearTabBackground(tabKey) {
+            tabBackgrounds[tabKey] = '';
+            saveSettingsToStorage();
+            applyThemeAndBackground();
+            renderTabBackgroundsUI();
+            showToast('تمت إزالة الخلفية');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAllData();
+            applyThemeAndBackground();
+            updateLiveClock();
+            setInterval(updateLiveClock, 1000);
+            switchTab('home');
+            refreshGeoPermissionStatus();
+        });
+    </script>
+</body>
+</html>
